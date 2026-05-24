@@ -11,8 +11,6 @@ const titleMap: Record<string, string> = {
   "/income": "Income",
   "/expenses": "Expenses",
   "/reports": "Reports",
-  "/users": "Users",
-  "/activity": "Activity Log",
   "/profile": "Profile",
   "/settings": "Settings",
 };

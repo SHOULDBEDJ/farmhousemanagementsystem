@@ -10,7 +10,6 @@ import {
   CalendarDays,
   Receipt,
   BarChart2,
-  Users,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui-bits/PageHeader";
 import { StatCard } from "@/components/ui-bits/StatCard";
@@ -112,12 +111,11 @@ function Dashboard() {
       </div>
 
       {/* Quick actions */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
         {[
           { to: "/bookings", label: "Add Booking", icon: Plus },
           { to: "/income", label: "Add Income", icon: IndianRupee },
           { to: "/expenses", label: "Add Expense", icon: Receipt },
-          { to: "/users", label: "Add User", icon: Users },
           { to: "/reports", label: "Report", icon: BarChart2 },
         ].map((a) => (
           <Link
