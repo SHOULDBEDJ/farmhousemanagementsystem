@@ -1,0 +1,42 @@
+import { useEffect, useState } from "react";
+import { Outlet, useRouterState } from "@tanstack/react-router";
+import { Sidebar } from "./Sidebar";
+import { Topbar } from "./Topbar";
+
+export function AppShell() {
+  const [open, setOpen] = useState(false);
+  const path = useRouterState({ select: (s) => s.location.pathname });
+
+  // Close mobile drawer on route change
+  useEffect(() => {
+    setOpen(false);
+  }, [path]);
+
+  return (
+    <div className="flex min-h-screen w-full bg-background">
+      {/* Desktop sidebar */}
+      <div className="hidden md:block w-60 flex-shrink-0">
+        <div className="fixed top-0 left-0 z-[100] h-screen w-60 border-r border-border">
+          <Sidebar />
+        </div>
+      </div>
+
+      {/* Mobile drawer */}
+      {open && (
+        <div className="fixed inset-0 z-[400] md:hidden">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 top-0 h-full">
+            <Sidebar onNavigate={() => setOpen(false)} />
+          </div>
+        </div>
+      )}
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        <Topbar onMenu={() => setOpen(true)} />
+        <main className="flex-1 overflow-x-hidden p-3 sm:p-4 md:p-6">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
+}
