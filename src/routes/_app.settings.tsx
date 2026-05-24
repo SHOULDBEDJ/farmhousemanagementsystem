@@ -22,7 +22,7 @@ import {
 import { toast } from "sonner";
 import { PageHeader } from "@/components/ui-bits/PageHeader";
 import { supabase } from "@/integrations/supabase/client";
-import { ldb } from "@/lib/local-db";
+import { query, mutate } from "@/lib/db";
 import { generateFullBackup, restoreFromBackup } from "@/lib/settings-utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -92,42 +92,76 @@ function SettingsPage() {
   const [activeTab, setActiveTab] = useState("slots");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const loadSettings = () => {
-    setSlots(ldb.list("time_slots", "start_time", true));
-    const raw = localStorage.getItem("ldb_whatsapp_templates");
+  const loadSettings = async () => {
+    setLoading(true);
     try {
-      const parsed = raw ? JSON.parse(raw) : [];
-      setTemplates(Array.isArray(parsed) ? parsed : []);
-    } catch {
-      setTemplates([]);
+      const slotsData = await query(
+        supabase.from("time_slots").select("*").order("start_time", { ascending: true }),
+        []
+      );
+      setSlots(slotsData || []);
+
+      const templatesData = await query(
+        (supabase as any).from("whatsapp_templates").select("*").order("name", { ascending: true }),
+        []
+      );
+      setTemplates(templatesData || []);
+    } catch (error: any) {
+      toast.error("Failed to load settings: " + error.message);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
     loadSettings();
   }, []);
 
-  const saveTemplatesToHiddenVault = (newTemplates: any[]) => {
-    localStorage.setItem("ldb_whatsapp_templates", JSON.stringify(newTemplates));
-    setTemplates(newTemplates);
-    toast.success("WhatsApp template saved successfully");
+  const handleAddTemplate = async (template: any) => {
+    try {
+      const { error } = await (supabase as any).from("whatsapp_templates").insert({
+        name: template.name,
+        content: template.content,
+        description: template.description || null,
+      });
+      if (error) throw error;
+      toast.success("WhatsApp template added successfully");
+      loadSettings();
+      document.dispatchEvent(new CustomEvent("close-dialog"));
+    } catch (err: any) {
+      toast.error("Failed to add template: " + err.message);
+    }
   };
 
-  const handleAddTemplate = (template: any) => {
-    const newTemplate = { ...template, id: crypto.randomUUID() };
-    saveTemplatesToHiddenVault([...templates, newTemplate]);
-    document.dispatchEvent(new CustomEvent("close-dialog"));
+  const handleUpdateTemplate = async (id: string, patch: any) => {
+    try {
+      const { error } = await (supabase as any)
+        .from("whatsapp_templates")
+        .update({
+          name: patch.name,
+          content: patch.content,
+          description: patch.description || null,
+        })
+        .eq("id", id);
+      if (error) throw error;
+      toast.success("WhatsApp template updated successfully");
+      loadSettings();
+      document.dispatchEvent(new CustomEvent("close-dialog"));
+    } catch (err: any) {
+      toast.error("Failed to update template: " + err.message);
+    }
   };
 
-  const handleUpdateTemplate = (id: string, patch: any) => {
-    saveTemplatesToHiddenVault(templates.map((t) => (t.id === id ? { ...t, ...patch } : t)));
-    document.dispatchEvent(new CustomEvent("close-dialog"));
-  };
-
-  const handleDeleteTemplate = (id: string) => {
+  const handleDeleteTemplate = async (id: string) => {
     if (!confirm("Are you sure?")) return;
-    saveTemplatesToHiddenVault(templates.filter((t) => t.id !== id));
+    try {
+      const { error } = await (supabase as any).from("whatsapp_templates").delete().eq("id", id);
+      if (error) throw error;
+      toast.success("WhatsApp template deleted");
+      loadSettings();
+    } catch (err: any) {
+      toast.error("Failed to delete template: " + err.message);
+    }
   };
 
   // Other handlers (Simplified)
@@ -169,54 +203,101 @@ function SettingsPage() {
     }
   };
 
-  const handleAddSlot = (slot: any) => {
-    ldb.insert("time_slots", slot);
-    toast.success("Time slot saved successfully");
-    loadSettings();
-    document.dispatchEvent(new CustomEvent("close-dialog"));
+  const handleAddSlot = async (slot: any) => {
+    try {
+      const { error } = await supabase.from("time_slots").insert({
+        name: slot.name,
+        start_time: slot.start_time,
+        end_time: slot.end_time,
+        color: slot.color,
+        is_overnight: slot.is_overnight,
+        is_default: slot.is_default,
+      });
+      if (error) throw error;
+      toast.success("Time slot saved successfully");
+      loadSettings();
+      document.dispatchEvent(new CustomEvent("close-dialog"));
+    } catch (err: any) {
+      toast.error("Failed to add slot: " + err.message);
+    }
   };
 
-  const handleUpdateSlot = (id: string, patch: any) => {
-    ldb.update("time_slots", id, patch);
-    toast.success("Time slot saved successfully");
-    loadSettings();
-    document.dispatchEvent(new CustomEvent("close-dialog"));
+  const handleUpdateSlot = async (id: string, patch: any) => {
+    try {
+      const { error } = await supabase
+        .from("time_slots")
+        .update({
+          name: patch.name,
+          start_time: patch.start_time,
+          end_time: patch.end_time,
+          color: patch.color,
+          is_overnight: patch.is_overnight,
+          is_default: patch.is_default,
+        })
+        .eq("id", id);
+      if (error) throw error;
+      toast.success("Time slot saved successfully");
+      loadSettings();
+      document.dispatchEvent(new CustomEvent("close-dialog"));
+    } catch (err: any) {
+      toast.error("Failed to update slot: " + err.message);
+    }
   };
 
-  const handleDeleteSlot = (id: string) => {
+  const handleDeleteSlot = async (id: string) => {
     if (!confirm("Are you sure?")) return;
-    ldb.delete("time_slots", id);
-    toast.success("Slot deleted");
-    loadSettings();
+    try {
+      const { error } = await supabase.from("time_slots").delete().eq("id", id);
+      if (error) throw error;
+      toast.success("Slot deleted");
+      loadSettings();
+    } catch (err: any) {
+      toast.error("Failed to delete slot: " + err.message);
+    }
   };
 
-  const handlePartialReset = (category: "bookings" | "incomes" | "expenses" | "income_types" | "expense_types") => {
+  const handlePartialReset = async (category: "bookings" | "incomes" | "expenses" | "income_types" | "expense_types") => {
     const confirmation = prompt(
-      `Type "DELETE ${category.toUpperCase()}" to confirm clearing all ${category}:`,
+      `Type "DELETE ${category.toUpperCase()}" to confirm clearing all ${category} globally:`,
     );
     if (confirmation !== `DELETE ${category.toUpperCase()}`) {
       if (confirmation !== null) toast.error("Confirmation text did not match.");
       return;
     }
-    const all = ldb.all(category);
-    all.forEach((r: any) => ldb.delete(category, r.id));
-    toast.success(`All ${category} deleted successfully`);
-    loadSettings();
+    setSaving(true);
+    try {
+      const { error } = await supabase.from(category).delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      if (error) throw error;
+      toast.success(`All ${category} deleted successfully`);
+      loadSettings();
+    } catch (error: any) {
+      toast.error("Failed to reset: " + error.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleFullReset = () => {
+  const handleFullReset = async () => {
     const confirmation = prompt(
-      `Type "RESET FACTORY SETTINGS" to confirm wiping EVERYTHING:`,
+      `Type "RESET FACTORY SETTINGS" to confirm wiping EVERYTHING globally:`,
     );
     if (confirmation !== "RESET FACTORY SETTINGS") {
       if (confirmation !== null) toast.error("Confirmation text did not match.");
       return;
     }
-    ["bookings", "incomes", "expenses", "income_types", "expense_types", "time_slots", "activity_log"]
-      .forEach((t) => ldb.all(t).forEach((r: any) => ldb.delete(t, r.id)));
-    localStorage.removeItem("ldb_whatsapp_templates");
-    toast.success("System has been reset to factory defaults");
-    loadSettings();
+    setSaving(true);
+    try {
+      const tables = ["bookings", "incomes", "expenses", "income_types", "expense_types", "time_slots"];
+      for (const t of tables) {
+        await supabase.from(t as any).delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      }
+      toast.success("System has been reset to factory defaults");
+      loadSettings();
+    } catch (error: any) {
+      toast.error("Failed to reset: " + error.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   // Show page immediately with empty content while loading in background

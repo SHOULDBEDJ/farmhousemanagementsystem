@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AppUsersRouteImport } from './routes/_app.users'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppReportsRouteImport } from './routes/_app.reports'
 import { Route as AppProfileRouteImport } from './routes/_app.profile'
@@ -20,7 +19,6 @@ import { Route as AppIncomeRouteImport } from './routes/_app.income'
 import { Route as AppExpensesRouteImport } from './routes/_app.expenses'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppBookingsRouteImport } from './routes/_app.bookings'
-import { Route as AppActivityRouteImport } from './routes/_app.activity'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -35,11 +33,6 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
-} as any)
-const AppUsersRoute = AppUsersRouteImport.update({
-  id: '/users',
-  path: '/users',
-  getParentRoute: () => AppRoute,
 } as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
@@ -76,16 +69,10 @@ const AppBookingsRoute = AppBookingsRouteImport.update({
   path: '/bookings',
   getParentRoute: () => AppRoute,
 } as any)
-const AppActivityRoute = AppActivityRouteImport.update({
-  id: '/activity',
-  path: '/activity',
-  getParentRoute: () => AppRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/activity': typeof AppActivityRoute
   '/bookings': typeof AppBookingsRoute
   '/dashboard': typeof AppDashboardRoute
   '/expenses': typeof AppExpensesRoute
@@ -93,12 +80,10 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AppProfileRoute
   '/reports': typeof AppReportsRoute
   '/settings': typeof AppSettingsRoute
-  '/users': typeof AppUsersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/activity': typeof AppActivityRoute
   '/bookings': typeof AppBookingsRoute
   '/dashboard': typeof AppDashboardRoute
   '/expenses': typeof AppExpensesRoute
@@ -106,14 +91,12 @@ export interface FileRoutesByTo {
   '/profile': typeof AppProfileRoute
   '/reports': typeof AppReportsRoute
   '/settings': typeof AppSettingsRoute
-  '/users': typeof AppUsersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
-  '/_app/activity': typeof AppActivityRoute
   '/_app/bookings': typeof AppBookingsRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/expenses': typeof AppExpensesRoute
@@ -121,14 +104,12 @@ export interface FileRoutesById {
   '/_app/profile': typeof AppProfileRoute
   '/_app/reports': typeof AppReportsRoute
   '/_app/settings': typeof AppSettingsRoute
-  '/_app/users': typeof AppUsersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/login'
-    | '/activity'
     | '/bookings'
     | '/dashboard'
     | '/expenses'
@@ -136,12 +117,10 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reports'
     | '/settings'
-    | '/users'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
-    | '/activity'
     | '/bookings'
     | '/dashboard'
     | '/expenses'
@@ -149,13 +128,11 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reports'
     | '/settings'
-    | '/users'
   id:
     | '__root__'
     | '/'
     | '/_app'
     | '/login'
-    | '/_app/activity'
     | '/_app/bookings'
     | '/_app/dashboard'
     | '/_app/expenses'
@@ -163,7 +140,6 @@ export interface FileRouteTypes {
     | '/_app/profile'
     | '/_app/reports'
     | '/_app/settings'
-    | '/_app/users'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -194,13 +170,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/_app/users': {
-      id: '/_app/users'
-      path: '/users'
-      fullPath: '/users'
-      preLoaderRoute: typeof AppUsersRouteImport
-      parentRoute: typeof AppRoute
     }
     '/_app/settings': {
       id: '/_app/settings'
@@ -251,18 +220,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBookingsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/activity': {
-      id: '/_app/activity'
-      path: '/activity'
-      fullPath: '/activity'
-      preLoaderRoute: typeof AppActivityRouteImport
-      parentRoute: typeof AppRoute
-    }
   }
 }
 
 interface AppRouteChildren {
-  AppActivityRoute: typeof AppActivityRoute
   AppBookingsRoute: typeof AppBookingsRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppExpensesRoute: typeof AppExpensesRoute
@@ -270,11 +231,9 @@ interface AppRouteChildren {
   AppProfileRoute: typeof AppProfileRoute
   AppReportsRoute: typeof AppReportsRoute
   AppSettingsRoute: typeof AppSettingsRoute
-  AppUsersRoute: typeof AppUsersRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
-  AppActivityRoute: AppActivityRoute,
   AppBookingsRoute: AppBookingsRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppExpensesRoute: AppExpensesRoute,
@@ -282,7 +241,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppProfileRoute: AppProfileRoute,
   AppReportsRoute: AppReportsRoute,
   AppSettingsRoute: AppSettingsRoute,
-  AppUsersRoute: AppUsersRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

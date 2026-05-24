@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import { Modal } from "@/components/ui-bits/Modal";
 import { supabase } from "@/integrations/supabase/client";
 import { logActivity, query } from "@/lib/db";
-import { ldb } from "@/lib/local-db";
 import { hasConflict, type SlotDef, type BookingLite } from "@/lib/slots";
 import { todayIST } from "@/lib/format";
 
@@ -76,15 +75,23 @@ export function BookingFormModal({
   useEffect(() => {
     if (!open) return;
     (async () => {
-      // Time slots: read from localStorage instantly (no Supabase call)
-      setSlots(ldb.list<SlotDef>("time_slots", "start_time", true) as any);
-      // Bookings: try Supabase with timeout, fallback to local
+      // Time slots: fetch from Supabase
+      const s = await query(
+        supabase
+          .from("time_slots")
+          .select("*")
+          .order("start_time", { ascending: true }),
+        []
+      );
+      setSlots(s as any);
+
+      // Bookings: try Supabase with timeout, fallback to empty array
       const b = await query(
         supabase
           .from("bookings")
           .select("id, booking_date, status, slot:time_slots(*)")
           .is("deleted_at", null),
-        ldb.list<any>("bookings"),
+        [],
       );
       setAllBookings((b ?? []) as any);
       if (initial) reset(initial as any);

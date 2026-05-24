@@ -9,7 +9,7 @@ import { EmptyState } from "@/components/ui-bits/EmptyState";
 import { ConfirmDialog } from "@/components/ui-bits/ConfirmDialog";
 import { Modal } from "@/components/ui-bits/Modal";
 import { TypeManager } from "@/routes/_app.income";
-import { ldb } from "@/lib/local-db";
+import { supabase } from "@/integrations/supabase/client";
 import { formatINR, formatDateIST, todayIST, shareBase64Image } from "@/lib/format";
 
 export const Route = createFileRoute("/_app/expenses")({
@@ -63,14 +63,34 @@ function ExpensesPage() {
     formState: { isSubmitting },
   } = useForm<FormVals>();
 
-  const load = () => {
-    const t = ldb.list<TypeRow>("expense_types", "name", true);
-    setTypes(t);
-    const r = ldb.list<any>("expenses", "date", false).map((row) => ({
-      ...row,
-      type: t.find((x: TypeRow) => x.id === row.type_id) ?? null,
-    }));
-    setRows(r);
+  const load = async () => {
+    try {
+      // 1. Fetch categories
+      const { data: catData, error: catErr } = await supabase
+        .from("expense_types")
+        .select("*")
+        .order("name", { ascending: true });
+      if (catErr) throw catErr;
+
+      const typesList = catData || [];
+      setTypes(typesList);
+
+      // 2. Fetch expenses
+      const { data: expData, error: expErr } = await supabase
+        .from("expenses")
+        .select("*")
+        .is("deleted_at", null)
+        .order("date", { ascending: false });
+      if (expErr) throw expErr;
+
+      const expenseRows = (expData || []).map((row) => ({
+        ...row,
+        type: typesList.find((x: TypeRow) => x.id === row.type_id) ?? null,
+      }));
+      setRows(expenseRows as any);
+    } catch (err: any) {
+      toast.error("Failed to load expense data: " + err.message);
+    }
   };
 
   const { new: autoAdd } = Route.useSearch();
@@ -108,24 +128,51 @@ function ExpensesPage() {
   };
 
   const onSubmit = async (v: FormVals) => {
-    const payload: any = { ...v, amount: Number(v.amount) };
-    if (editing) {
-      ldb.update("expenses", editing.id, payload);
-      toast.success("Expense updated");
-    } else {
-      ldb.insert("expenses", payload);
-      toast.success("Expense added");
+    const payload: any = {
+      date: v.date,
+      type_id: v.type_id,
+      amount: Number(v.amount),
+      payment_mode: v.payment_mode,
+      vendor: v.vendor || null,
+      reference: v.reference || null,
+      description: v.description || null,
+    };
+    try {
+      if (editing) {
+        const { error } = await supabase
+          .from("expenses")
+          .update(payload)
+          .eq("id", editing.id);
+        if (error) throw error;
+        toast.success("Expense updated");
+      } else {
+        const { error } = await supabase
+          .from("expenses")
+          .insert(payload);
+        if (error) throw error;
+        toast.success("Expense added");
+      }
+      setShowForm(false);
+      load();
+    } catch (err: any) {
+      toast.error("Failed to save: " + err.message);
     }
-    setShowForm(false);
-    load();
   };
 
-  const doDel = () => {
+  const doDel = async () => {
     if (!delTarget) return;
-    ldb.softDelete("expenses", delTarget.id);
-    toast.success("Deleted");
-    setDelTarget(null);
-    load();
+    try {
+      const { error } = await supabase
+        .from("expenses")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", delTarget.id);
+      if (error) throw error;
+      toast.success("Deleted");
+      setDelTarget(null);
+      load();
+    } catch (err: any) {
+      toast.error("Failed to delete: " + err.message);
+    }
   };
 
   const total = rows.reduce((s, r) => s + Number(r.amount), 0);

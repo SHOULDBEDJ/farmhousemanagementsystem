@@ -225,7 +225,7 @@ export function useAuth() {
 export function canAccess(role: AppRole | undefined, route: string): boolean {
   if (!role) return false;
   if (route.startsWith("/settings")) return role === "SuperAdmin";
-  if (route.startsWith("/users") || route.startsWith("/reports") || route.startsWith("/activity"))
+  if (route.startsWith("/reports"))
     return role === "SuperAdmin" || role === "Admin";
   return true;
 }

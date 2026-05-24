@@ -6,8 +6,6 @@ import {
   DollarSign,
   Receipt,
   BarChart2,
-  Users,
-  Clock,
   User,
   Settings,
   LogOut,
@@ -23,8 +21,6 @@ const nav = [
   { to: "/income", label: "Income", icon: DollarSign },
   { to: "/expenses", label: "Expenses", icon: Receipt },
   { to: "/reports", label: "Reports", icon: BarChart2 },
-  { to: "/users", label: "Users", icon: Users },
-  { to: "/activity", label: "Activity Log", icon: Clock },
   { to: "/profile", label: "Profile", icon: User },
   { to: "/settings", label: "Settings", icon: Settings },
 ] as const;

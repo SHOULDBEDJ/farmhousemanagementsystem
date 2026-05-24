@@ -8,8 +8,6 @@ import {
   BarChart2,
   MoreHorizontal,
   DollarSign,
-  Users,
-  Clock,
   User,
   Settings,
   X,
@@ -24,8 +22,6 @@ const main = [
 
 const more = [
   { to: "/income", label: "Income", icon: DollarSign },
-  { to: "/users", label: "Users", icon: Users },
-  { to: "/activity", label: "Activity Log", icon: Clock },
   { to: "/profile", label: "Profile", icon: User },
   { to: "/settings", label: "Settings", icon: Settings },
 ] as const;

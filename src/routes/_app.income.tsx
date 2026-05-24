@@ -18,8 +18,8 @@ import { StatCard } from "@/components/ui-bits/StatCard";
 import { EmptyState } from "@/components/ui-bits/EmptyState";
 import { ConfirmDialog } from "@/components/ui-bits/ConfirmDialog";
 import { Modal } from "@/components/ui-bits/Modal";
-import { ldb } from "@/lib/local-db";
 import { formatINR, formatDateIST, todayIST, shareBase64Image } from "@/lib/format";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_app/income")({
   head: () => ({ meta: [{ title: "Income | 16 Eyes Farm House" }] }),
@@ -71,14 +71,34 @@ function IncomePage() {
     formState: { isSubmitting },
   } = useForm<FormVals>();
 
-  const load = () => {
-    const t = ldb.list<TypeRow>("income_types", "name", true);
-    setTypes(t);
-    const r = ldb.list<any>("incomes", "date", false).map((row) => ({
-      ...row,
-      type: t.find((x: TypeRow) => x.id === row.type_id) ?? null,
-    }));
-    setRows(r);
+  const load = async () => {
+    try {
+      // 1. Fetch categories
+      const { data: catData, error: catErr } = await supabase
+        .from("income_types")
+        .select("*")
+        .order("name", { ascending: true });
+      if (catErr) throw catErr;
+
+      const typesList = catData || [];
+      setTypes(typesList);
+
+      // 2. Fetch incomes
+      const { data: incData, error: incErr } = await supabase
+        .from("incomes")
+        .select("*")
+        .is("deleted_at", null)
+        .order("date", { ascending: false });
+      if (incErr) throw incErr;
+
+      const incomeRows = (incData || []).map((row: any) => ({
+        ...row,
+        type: typesList.find((x: TypeRow) => x.id === row.type_id) ?? null,
+      }));
+      setRows(incomeRows as any);
+    } catch (err: any) {
+      toast.error("Failed to load income data: " + err.message);
+    }
   };
 
   const { new: autoAdd } = Route.useSearch();
@@ -114,24 +134,50 @@ function IncomePage() {
   };
 
   const onSubmit = async (v: FormVals) => {
-    const payload: any = { ...v, amount: Number(v.amount) };
-    if (editing) {
-      ldb.update("incomes", editing.id, payload);
-      toast.success("Income updated");
-    } else {
-      ldb.insert("incomes", payload);
-      toast.success("Income added");
+    const payload: any = {
+      date: v.date,
+      type_id: v.type_id,
+      amount: Number(v.amount),
+      payment_mode: v.payment_mode,
+      reference: v.reference || null,
+      description: v.description || null,
+    };
+    try {
+      if (editing) {
+        const { error } = await supabase
+          .from("incomes")
+          .update(payload)
+          .eq("id", editing.id);
+        if (error) throw error;
+        toast.success("Income updated");
+      } else {
+        const { error } = await supabase
+          .from("incomes")
+          .insert(payload);
+        if (error) throw error;
+        toast.success("Income added");
+      }
+      setShowForm(false);
+      load();
+    } catch (err: any) {
+      toast.error("Failed to save: " + err.message);
     }
-    setShowForm(false);
-    load();
   };
 
-  const doDel = () => {
+  const doDel = async () => {
     if (!delTarget) return;
-    ldb.softDelete("incomes", delTarget.id);
-    toast.success("Deleted");
-    setDelTarget(null);
-    load();
+    try {
+      const { error } = await supabase
+        .from("incomes")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", delTarget.id);
+      if (error) throw error;
+      toast.success("Deleted");
+      setDelTarget(null);
+      load();
+    } catch (err: any) {
+      toast.error("Failed to delete: " + err.message);
+    }
   };
 
   const total = rows.reduce((s, r) => s + Number(r.amount), 0);
@@ -527,40 +573,86 @@ export function TypeManager({
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
 
-  const add = () => {
+  const add = async () => {
     if (!name.trim()) return;
-    ldb.insert<any>(table, { name: name.trim() });
-    setName("");
-    reload();
-    toast.success("Type added");
-  };
-
-  const save = (id: string) => {
-    if (!editName.trim()) return;
-    ldb.update<any>(table, id, { name: editName.trim() });
-    setEditId(null);
-    reload();
-  };
-
-  const del = (t: TypeRow) => {
-    // Check if in use
-    const inUse = ldb.where<any>(usageTable, "type_id", t.id).length > 0;
-    if (inUse) {
-      const ok = window.confirm(
-        `This category is used in your records. Move those records to "Other"?`,
-      );
-      if (!ok) return;
-      // Ensure "Other" exists
-      let other = ldb.list<TypeRow>(table, "name", true).find((x) => x.name === "Other");
-      if (!other) other = ldb.insert<any>(table, { name: "Other" }) as TypeRow;
-      // Reassign records
-      ldb.all<any>(usageTable)
-        .filter((r) => r.type_id === t.id)
-        .forEach((r) => ldb.update<any>(usageTable, r.id, { type_id: other!.id }));
+    try {
+      const { error } = await supabase.from(table).insert({ name: name.trim() });
+      if (error) throw error;
+      setName("");
+      reload();
+      toast.success("Type added");
+    } catch (err: any) {
+      toast.error("Failed to add type: " + err.message);
     }
-    ldb.delete(table, t.id);
-    toast.success("Category removed");
-    reload();
+  };
+
+  const save = async (id: string) => {
+    if (!editName.trim()) return;
+    try {
+      const { error } = await supabase.from(table).update({ name: editName.trim() }).eq("id", id);
+      if (error) throw error;
+      setEditId(null);
+      reload();
+      toast.success("Type updated");
+    } catch (err: any) {
+      toast.error("Failed to update type: " + err.message);
+    }
+  };
+
+  const del = async (t: TypeRow) => {
+    try {
+      // Check if in use in the online database
+      const { data: usageData, error: usageErr } = await supabase
+        .from(usageTable)
+        .select("id")
+        .eq("type_id", t.id)
+        .is("deleted_at", null)
+        .limit(1);
+      if (usageErr) throw usageErr;
+
+      const inUse = usageData && usageData.length > 0;
+      if (inUse) {
+        const ok = window.confirm(
+          `This category is used in your records. Move those records to "Other"?`
+        );
+        if (!ok) return;
+
+        // Ensure "Other" exists
+        let { data: otherData, error: otherErr } = await supabase
+          .from(table)
+          .select("*")
+          .eq("name", "Other")
+          .maybeSingle();
+        if (otherErr) throw otherErr;
+
+        let otherId = otherData?.id;
+        if (!otherId) {
+          const { data: newOther, error: createErr } = await supabase
+            .from(table)
+            .insert({ name: "Other" })
+            .select("id")
+            .single();
+          if (createErr) throw createErr;
+          otherId = newOther.id;
+        }
+
+        // Reassign records
+        const { error: reassignErr } = await supabase
+          .from(usageTable)
+          .update({ type_id: otherId })
+          .eq("type_id", t.id);
+        if (reassignErr) throw reassignErr;
+      }
+
+      // Now delete the category
+      const { error: deleteErr } = await supabase.from(table).delete().eq("id", t.id);
+      if (deleteErr) throw deleteErr;
+
+      toast.success("Category removed");
+      reload();
+    } catch (err: any) {
+      toast.error("Failed to delete category: " + err.message);
+    }
   };
 
   return (

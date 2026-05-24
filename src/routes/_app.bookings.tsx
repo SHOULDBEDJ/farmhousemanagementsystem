@@ -60,7 +60,7 @@ function BookingsPage() {
 
   const load = async () => {
     setLoading(true);
-    const [bks, log, drfts] = await Promise.all([
+    const [bks, temps, drfts] = await Promise.all([
       query(
         supabase
           .from("bookings")
@@ -70,15 +70,11 @@ function BookingsPage() {
         [],
       ),
       query(
-        supabase
-          .from("activity_log")
-          .select("detail")
-          .eq("module", "SETTINGS_STORAGE")
-          .eq("action", "WHATSAPP_TEMPLATES")
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-        null,
+        (supabase as any)
+          .from("whatsapp_templates")
+          .select("*")
+          .order("name", { ascending: true }),
+        [],
       ),
       query(
         supabase
@@ -91,6 +87,7 @@ function BookingsPage() {
     ]);
 
     setRows((bks ?? []) as any);
+    setTemplates(temps || []);
     setDrafts(
       ((drfts ?? []) as any[])
         .filter((d) => d.detail)
@@ -100,15 +97,6 @@ function BookingsPage() {
           created_at: d.created_at,
         })),
     );
-
-    if ((log as any)?.detail) {
-      try {
-        const parsed = JSON.parse((log as any).detail);
-        if (Array.isArray(parsed)) setTemplates(parsed);
-      } catch (e) {
-        console.error("Template parse error", e);
-      }
-    }
     setLoading(false);
   };
   const { new: autoAdd, date: autoDate } = Route.useSearch();
@@ -119,8 +107,19 @@ function BookingsPage() {
     if (autoAdd) setShowAdd(true);
   }, [autoAdd]);
 
-  const getWhatsAppLink = (mobile: string, content: string) => {
-    return `https://wa.me/91${mobile}?text=${encodeURIComponent(content)}`;
+  const getWhatsAppLink = (mobile: string, content: string, booking: Row) => {
+    let text = content;
+    // Replace placeholders
+    text = text.replace(/\{\{name\}\}/gi, booking.customer_name);
+    text = text.replace(/\{\{date\}\}/gi, formatDateIST(booking.booking_date));
+    text = text.replace(/\{\{slot\}\}/gi, booking.slot?.name ?? "");
+    text = text.replace(/\{\{order_id\}\}/gi, booking.order_id);
+    text = text.replace(/\{\{agreed_total\}\}/gi, formatINR(booking.agreed_total));
+    text = text.replace(/\{\{advance_paid\}\}/gi, formatINR(booking.advance_paid));
+    const bal = Number(booking.agreed_total) - Number(booking.advance_paid) - Number(booking.discount);
+    text = text.replace(/\{\{balance\}\}/gi, formatINR(bal));
+    
+    return `https://wa.me/91${mobile}?text=${encodeURIComponent(text)}`;
   };
 
   const filtered = rows.filter((r) => {
@@ -453,7 +452,7 @@ function BookingsPage() {
                           <button
                             key={t.id}
                             onClick={() =>
-                              window.open(getWhatsAppLink(b.mobile, t.content), "_blank")
+                              window.open(getWhatsAppLink(b.mobile, t.content, b), "_blank")
                             }
                             className="rounded p-1.5 text-success hover:bg-muted flex items-center gap-1 group/wa"
                             title={`Send ${t.name}`}
@@ -569,7 +568,7 @@ function BookingsPage() {
                   {templates.map((t) => (
                     <button
                       key={t.id}
-                      onClick={() => window.open(getWhatsAppLink(b.mobile, t.content), "_blank")}
+                      onClick={() => window.open(getWhatsAppLink(b.mobile, t.content, b), "_blank")}
                       className="flex-1 min-w-[120px] rounded-md bg-green-500 text-white px-2 py-1.5 text-xs font-bold flex items-center justify-center gap-1"
                     >
                       <MessageCircle size={12} /> Send {t.name}
