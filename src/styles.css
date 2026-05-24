@@ -179,3 +179,14 @@
   tr { page-break-inside: avoid; }
   @page { size: A4 portrait; margin: 1.5cm; }
 }
+
+/* Forcefully hide Cloudflare Access Toasts */
+div[class*="cf-toast"],
+div[id*="cf-toast"],
+div[class*="cf-access"] {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  z-index: -9999 !important;
+}
