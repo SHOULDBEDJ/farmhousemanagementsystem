@@ -32,7 +32,7 @@ export function Modal({
   }, [open, onClose]);
 
   if (!open) return null;
-  const w = size === "xl" ? "sm:max-w-3xl" : size === "lg" ? "sm:max-w-2xl" : "sm:max-w-lg";
+  const w = size === "xl" ? "sm:max-w-5xl" : size === "lg" ? "sm:max-w-3xl" : "sm:max-w-lg";
   return (
     <div className="fixed inset-0 z-[400] flex items-end justify-center sm:items-center">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />

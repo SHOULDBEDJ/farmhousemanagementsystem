@@ -277,392 +277,396 @@ export function BookingViewModal({
         </div>
       }
     >
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-12 text-sm">
-        
-        {/* Left Side: Booking & Customer Details + Timeline */}
-        <div className="md:col-span-7 space-y-5 pr-0 md:pr-4 md:border-r border-border">
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            
-            {/* Customer Information Card */}
-            <div className="rounded-xl border border-border bg-card p-4 space-y-2">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                <User size={13} className="text-gold" /> Customer Information
-              </h4>
-              <div className="space-y-1">
-                <div className="flex justify-between py-1 border-b border-border/50">
-                  <span className="text-muted-foreground text-xs">Full Name</span>
-                  <span className="font-semibold">{booking.customer_name}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-border/50">
-                  <span className="text-muted-foreground text-xs">Mobile</span>
-                  <span className="font-medium text-navy flex items-center gap-1">
-                    <Phone size={11} /> +91 {booking.mobile}
-                  </span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span className="text-muted-foreground text-xs">ID Verification</span>
-                  <span className="text-xs font-medium">
-                    {booking.id_proof_type ? `${booking.id_proof_type} (${booking.id_proof_number})` : "Not provided"}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Booking Details Card */}
-            <div className="rounded-xl border border-border bg-card p-4 space-y-2">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                <Calendar size={13} className="text-gold" /> Booking Information
-              </h4>
-              <div className="space-y-1">
-                <div className="flex justify-between py-1 border-b border-border/50">
-                  <span className="text-muted-foreground text-xs">Booking Date</span>
-                  <span className="font-semibold">{formatDateIST(booking.booking_date)}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-border/50">
-                  <span className="text-muted-foreground text-xs">Time Slot</span>
-                  <span
-                    className="rounded-full px-2 py-0.5 text-[10px] text-white font-semibold"
-                    style={{ backgroundColor: booking.slot?.color ?? "#888" }}
-                  >
-                    {booking.slot?.name || "Full Day"}
-                  </span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span className="text-muted-foreground text-xs">Total Guests</span>
-                  <span className="font-semibold">{booking.guests} Guests</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Add-On Services Card */}
-          <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-              <Layers size={13} className="text-gold" /> Add-On Services
-            </h4>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <label className="flex items-center gap-2 rounded-lg border border-border p-2 cursor-pointer hover:bg-muted/20">
-                <input
-                  type="checkbox"
-                  checked={addonBBQ}
-                  onChange={(e) => setAddonBBQ(e.target.checked)}
-                  className="rounded text-navy focus:ring-navy"
-                />
-                <span className="text-xs font-medium">BBQ Grill Setup</span>
-              </label>
-              <label className="flex items-center gap-2 rounded-lg border border-border p-2 cursor-pointer hover:bg-muted/20">
-                <input
-                  type="checkbox"
-                  checked={addonBonfire}
-                  onChange={(e) => setAddonBonfire(e.target.checked)}
-                  className="rounded text-navy focus:ring-navy"
-                />
-                <span className="text-xs font-medium">Bonfire Package</span>
-              </label>
-              <label className="flex items-center gap-2 rounded-lg border border-border p-2 cursor-pointer hover:bg-muted/20">
-                <input
-                  type="checkbox"
-                  checked={addonDJ}
-                  onChange={(e) => setAddonDJ(e.target.checked)}
-                  className="rounded text-navy focus:ring-navy"
-                />
-                <span className="text-xs font-medium">DJ & Music sound</span>
-              </label>
+      <div className="space-y-6 text-sm">
+        {/* Modern Hero Header Banner */}
+        <div className="rounded-2xl bg-gradient-to-r from-navy via-navy/95 to-[#1a237e] p-6 text-white shadow-md relative overflow-hidden">
+          <div className="absolute right-0 top-0 h-40 w-40 bg-gold/10 rounded-full blur-2xl"></div>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+            <div className="space-y-1">
+              <span className="text-[9px] font-extrabold uppercase tracking-widest text-gold bg-gold/20 px-2.5 py-1 rounded-full border border-gold/30">
+                {booking.slot?.name || "Full Day Slot"}
+              </span>
+              <h2 className="text-xl sm:text-2xl font-black tracking-tight mt-1">{booking.customer_name}</h2>
+              <p className="text-xs text-slate-300 font-medium flex items-center gap-2">
+                <span>Ref: <strong className="text-white font-bold">{booking.order_id}</strong></span>
+                <span>•</span>
+                <span>Date: <strong className="text-white font-bold">{formatDateIST(booking.booking_date)}</strong></span>
+              </p>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-xs text-muted-foreground whitespace-nowrap">Caretaker Phone:</span>
-              <input
-                type="text"
-                value={customCaretaker}
-                onChange={(e) => setCustomCaretaker(e.target.value)}
-                placeholder="Caretaker Mobile"
-                className="w-full max-w-[200px] rounded-md border border-input bg-card px-2 py-1 text-xs"
-              />
-            </div>
-          </div>
-
-          {/* Booking Timeline */}
-          <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-              <Activity size={13} className="text-gold" /> Booking Journey Timeline
-            </h4>
-            
-            <div className="relative pl-6 space-y-4">
-              {/* Vertical timeline line */}
-              <div className="absolute left-2.5 top-1.5 bottom-1.5 w-0.5 bg-border"></div>
-
-              {/* Step 1: Created */}
-              <div className="relative flex gap-3">
-                <div className={`absolute -left-6 flex h-5 w-5 items-center justify-center rounded-full border ${currentStep >= 1 ? "bg-navy text-white border-navy" : "bg-card border-border"}`}>
-                  <Check size={10} />
-                </div>
-                <div>
-                  <div className="text-xs font-bold">Booking Created</div>
-                  <div className="text-[10px] text-muted-foreground">Order Ref: {booking.order_id}</div>
-                </div>
-              </div>
-
-              {/* Step 2: Confirmed */}
-              <div className="relative flex gap-3">
-                <div className={`absolute -left-6 flex h-5 w-5 items-center justify-center rounded-full border ${currentStep >= 2 ? "bg-navy text-white border-navy" : "bg-card border-border"}`}>
-                  {currentStep >= 2 ? <Check size={10} /> : <span className="text-[9px]">2</span>}
-                </div>
-                <div>
-                  <div className="text-xs font-bold flex items-center gap-1">
-                    Booking Confirmed
-                    {booking.status === "Cancelled" && (
-                      <span className="text-[10px] text-danger font-medium">(CANCELLED)</span>
-                    )}
-                  </div>
-                  <div className="text-[10px] text-muted-foreground">Status Trigger check: {booking.status}</div>
-                </div>
-              </div>
-
-              {/* Step 3: Checked In */}
-              <div className="relative flex gap-3">
-                <div className={`absolute -left-6 flex h-5 w-5 items-center justify-center rounded-full border ${currentStep >= 3 ? "bg-navy text-white border-navy" : "bg-card border-border"}`}>
-                  {currentStep >= 3 ? <Check size={10} /> : <span className="text-[9px]">3</span>}
-                </div>
-                <div>
-                  <div className="text-xs font-bold">Checked In at Farmhouse</div>
-                  <div className="text-[10px] text-muted-foreground">Welcome message and rules delivered</div>
-                </div>
-              </div>
-
-              {/* Step 4: Checked Out */}
-              <div className="relative flex gap-3">
-                <div className={`absolute -left-6 flex h-5 w-5 items-center justify-center rounded-full border ${currentStep >= 4 ? "bg-navy text-white border-navy" : "bg-card border-border"}`}>
-                  {currentStep >= 4 ? <Check size={10} /> : <span className="text-[9px]">4</span>}
-                </div>
-                <div>
-                  <div className="text-xs font-bold">Checked Out & Thank You</div>
-                  <div className="text-[10px] text-muted-foreground">Feedback & review requests sent</div>
-                </div>
+              <div className="text-right">
+                <span className="text-[10px] text-slate-300 uppercase block font-bold">Booking Status</span>
+                <span className={`inline-block rounded-full px-3 py-1 text-[11px] font-black uppercase mt-1 ${
+                  booking.status === 'Confirmed' ? 'bg-success text-white' :
+                  booking.status === 'Pending' ? 'bg-gold text-navy' : 'bg-danger text-white'
+                }`}>
+                  {booking.status}
+                </span>
               </div>
             </div>
           </div>
-
-          {booking.notes && (
-            <div className="rounded-xl border border-border bg-card p-4 space-y-1">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                <FileText size={13} className="text-gold" /> Special Notes
-              </h4>
-              <p className="text-muted-foreground text-xs">{booking.notes}</p>
-            </div>
-          )}
         </div>
 
-        {/* Right Side: Payment summary & WhatsApp Automation Panel */}
-        <div className="md:col-span-5 space-y-4">
-          
-          {/* Payment Card */}
-          <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-              <CreditCard size={13} className="text-gold" /> Payment Breakdown
-            </h4>
-            <div className="space-y-1.5">
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">Agreed Total</span>
-                <span>{formatINR(booking.agreed_total)}</span>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Left Area (7 cols): Customer Info, Addons, Timeline */}
+          <div className="lg:col-span-7 space-y-6">
+            
+            {/* Primary Details Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Customer Details */}
+              <div className="bg-card border border-border/80 rounded-2xl p-5 space-y-4 shadow-xs">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-navy flex items-center gap-2 pb-2 border-b border-border/50">
+                  <User size={14} className="text-gold" /> Contact Details
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-[10px] uppercase font-bold text-muted-foreground block">Customer Name</label>
+                    <span className="font-extrabold text-sm text-foreground">{booking.customer_name}</span>
+                  </div>
+                  <div>
+                    <label className="text-[10px] uppercase font-bold text-muted-foreground block">Mobile Number</label>
+                    <a href={`tel:${booking.mobile}`} className="font-semibold text-sm text-navy hover:underline flex items-center gap-1.5 mt-0.5">
+                      <Phone size={13} /> +91 {booking.mobile}
+                    </a>
+                  </div>
+                  <div>
+                    <label className="text-[10px] uppercase font-bold text-muted-foreground block">Verification ID</label>
+                    <span className="font-medium text-xs text-foreground/80">
+                      {booking.id_proof_type ? `${booking.id_proof_type} (${booking.id_proof_number})` : "No ID provided"}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-between text-xs text-success font-medium">
-                <span>Advance Paid</span>
-                <span>{formatINR(booking.advance_paid)}</span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">Discount Applied</span>
-                <span>{formatINR(booking.discount)}</span>
-              </div>
-              <div
-                className={`flex justify-between rounded-lg p-2.5 ${balance > 0 ? "bg-danger/10 text-danger" : "bg-success/10 text-success"}`}
-              >
-                <span className="font-bold text-xs">Balance Outstanding</span>
-                <span className="font-extrabold text-sm">{formatINR(balance)}</span>
+
+              {/* Stay / Booking details */}
+              <div className="bg-card border border-border/80 rounded-2xl p-5 space-y-4 shadow-xs">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-navy flex items-center gap-2 pb-2 border-b border-border/50">
+                  <Calendar size={14} className="text-gold" /> Stay Information
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-[10px] uppercase font-bold text-muted-foreground block">Check-in Date</label>
+                    <span className="font-extrabold text-sm text-foreground">{formatDateIST(booking.booking_date)}</span>
+                  </div>
+                  <div>
+                    <label className="text-[10px] uppercase font-bold text-muted-foreground block">Time Slot</label>
+                    <span className="inline-flex items-center gap-1.5 font-bold text-xs mt-1 text-white px-2.5 py-0.5 rounded-full" style={{ backgroundColor: booking.slot?.color ?? "#888" }}>
+                      <Clock size={11} /> {booking.slot?.name || "Full Day"}
+                    </span>
+                  </div>
+                  <div>
+                    <label className="text-[10px] uppercase font-bold text-muted-foreground block">Total Guest Count</label>
+                    <span className="font-extrabold text-sm text-foreground">{booking.guests} Guests</span>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* WhatsApp Communication Panel */}
-          <div className="rounded-xl border border-border bg-card p-4 space-y-3 shadow-sm relative overflow-hidden">
-            <div className="absolute top-0 right-0 h-16 w-16 bg-success/5 rounded-bl-full flex items-center justify-end pr-3 pb-3">
-              <MessageCircle className="text-success h-5 w-5 opacity-40" />
-            </div>
-
-            <div className="flex items-center gap-1.5">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-navy">
-                WhatsApp Communication Panel
-              </h4>
-              <span className="rounded bg-success/15 px-1.5 py-0.5 text-[8px] font-bold text-success uppercase">
-                Active Engine
-              </span>
-            </div>
-
-            {/* Template Dropdown */}
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-muted-foreground uppercase">Template Type</label>
-              <select
-                value={selectedTemplateId}
-                onChange={(e) => setSelectedTemplateId(e.target.value)}
-                className="w-full rounded-md border border-input bg-card px-3 py-1.5 text-xs focus:ring-1 focus:ring-navy focus:outline-none"
-              >
-                <optgroup label={`Suggested for ${booking.status}`}>
-                  {suggestedTemplates.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name} ({t.category})
-                    </option>
-                  ))}
-                </optgroup>
-                <optgroup label="Other Templates">
-                  {templates.filter(t => !suggestedTemplates.some(st => st.id === t.id)).map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
-                    </option>
-                  ))}
-                </optgroup>
-              </select>
-            </div>
-
-            {/* Tone Selector */}
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-1">
-                  <Sparkles size={9} className="text-gold" /> AI Tone Selection
-                </label>
-                <select
-                  value={aiTone}
-                  onChange={(e) => setAiTone(e.target.value)}
-                  className="w-full rounded-md border border-input bg-card px-2 py-1 text-xs focus:outline-none"
-                >
-                  {AI_TONES.map((tone) => (
-                    <option key={tone.value} value={tone.value}>
-                      {tone.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-muted-foreground uppercase">Priority</label>
-                <span className={`block py-1 px-2 text-xs font-semibold rounded text-center ${
-                  activeTemplate?.priority === "High" ? "bg-danger/10 text-danger" :
-                  activeTemplate?.priority === "Medium" ? "bg-gold/15 text-gold-dark" : "bg-muted text-muted-foreground"
+            {/* Add-On Services Card */}
+            <div className="bg-card border border-border/80 rounded-2xl p-5 space-y-4 shadow-xs">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-navy flex items-center gap-2 pb-1">
+                <Layers size={14} className="text-gold" /> Add-On Services
+              </h3>
+              <p className="text-[11px] text-muted-foreground leading-normal">
+                Toggle options below to update dynamic variables inside the WhatsApp template.
+              </p>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <label className={`flex items-center justify-between rounded-xl border p-3 cursor-pointer transition-all ${
+                  addonBBQ ? "border-navy bg-navy/5 text-navy font-bold" : "border-border bg-card hover:bg-muted/10 text-foreground"
                 }`}>
-                  {activeTemplate?.priority || "Medium"} Priority
-                </span>
+                  <span className="text-xs">BBQ Setup</span>
+                  <input
+                    type="checkbox"
+                    checked={addonBBQ}
+                    onChange={(e) => setAddonBBQ(e.target.checked)}
+                    className="rounded text-navy focus:ring-navy scale-95"
+                  />
+                </label>
+                <label className={`flex items-center justify-between rounded-xl border p-3 cursor-pointer transition-all ${
+                  addonBonfire ? "border-navy bg-navy/5 text-navy font-bold" : "border-border bg-card hover:bg-muted/10 text-foreground"
+                }`}>
+                  <span className="text-xs">Bonfire</span>
+                  <input
+                    type="checkbox"
+                    checked={addonBonfire}
+                    onChange={(e) => setAddonBonfire(e.target.checked)}
+                    className="rounded text-navy focus:ring-navy scale-95"
+                  />
+                </label>
+                <label className={`flex items-center justify-between rounded-xl border p-3 cursor-pointer transition-all ${
+                  addonDJ ? "border-navy bg-navy/5 text-navy font-bold" : "border-border bg-card hover:bg-muted/10 text-foreground"
+                }`}>
+                  <span className="text-xs">DJ Sound</span>
+                  <input
+                    type="checkbox"
+                    checked={addonDJ}
+                    onChange={(e) => setAddonDJ(e.target.checked)}
+                    className="rounded text-navy focus:ring-navy scale-95"
+                  />
+                </label>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-border/40">
+                <span className="text-xs text-muted-foreground font-medium">Caretaker contact phone for templates:</span>
+                <input
+                  type="text"
+                  value={customCaretaker}
+                  onChange={(e) => setCustomCaretaker(e.target.value)}
+                  placeholder="Caretaker Mobile"
+                  className="rounded-lg border border-input bg-card px-3 py-1.5 text-xs w-full sm:w-48 focus:ring-1 focus:ring-navy focus:outline-none"
+                />
               </div>
             </div>
 
-            {/* Message Editing Box */}
-            <div className="space-y-1">
-              <div className="flex justify-between items-center">
-                <label className="text-[10px] font-bold text-muted-foreground uppercase">AI Dynamic Content Preview</label>
-                <span className="text-[8px] text-muted-foreground">Variables auto-injected</span>
+            {/* Booking Journey Timeline */}
+            <div className="bg-card border border-border/80 rounded-2xl p-5 space-y-5 shadow-xs">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-navy flex items-center gap-2 pb-2 border-b border-border/50">
+                <Activity size={14} className="text-gold" /> Booking Journey Timeline
+              </h3>
+              
+              <div className="relative pl-8 space-y-6">
+                <div className="absolute left-[11px] top-2 bottom-2 w-0.5 bg-border/60"></div>
+
+                {[
+                  { step: 1, title: "Booking Created", desc: `Order Ref: ${booking.order_id}`, trigger: "Created" },
+                  { step: 2, title: "Booking Confirmed", desc: `Status Trigger check: ${booking.status}`, trigger: "Confirmed" },
+                  { step: 3, title: "Checked In at Farmhouse", desc: "Welcome message & rules delivered", trigger: "Checked-In" },
+                  { step: 4, title: "Checked Out & Thank You", desc: "Feedback & review requests sent", trigger: "Checked-Out" }
+                ].map((item) => {
+                  const isDone = currentStep >= item.step;
+                  const isActive = currentStep === item.step;
+                  return (
+                    <div key={item.step} className="relative flex gap-4">
+                      <div className={`absolute -left-8 flex h-6 w-6 items-center justify-center rounded-full border transition-all ${
+                        isDone ? "bg-navy text-white border-navy font-bold" : "bg-card border-border text-muted-foreground"
+                      } ${isActive ? "ring-4 ring-navy/15" : ""}`}>
+                        {isDone ? <Check size={11} className="stroke-[3px]" /> : <span className="text-[10px] font-bold">{item.step}</span>}
+                      </div>
+                      <div className="space-y-0.5">
+                        <div className={`text-xs font-black ${isDone ? "text-navy" : "text-muted-foreground"}`}>{item.title}</div>
+                        <div className="text-[10px] text-muted-foreground">{item.desc}</div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              <textarea
-                value={messageContent}
-                onChange={(e) => setMessageContent(e.target.value)}
-                rows={5}
-                className="w-full rounded-md border border-input bg-card p-2 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-success"
-              ></textarea>
             </div>
 
-            {/* Delivery simulator */}
-            {deliveryStatus !== "idle" && (
-              <div className="flex items-center justify-between rounded bg-muted/30 p-2 text-xs">
-                <span className="text-muted-foreground">Delivery Status:</span>
-                <span className="font-semibold flex items-center gap-1">
-                  {deliveryStatus === "sending" && (
-                    <span className="flex items-center gap-1 text-gold"><Clock size={12} className="animate-spin" /> Sending...</span>
-                  )}
-                  {deliveryStatus === "sent" && (
-                    <span className="flex items-center gap-1 text-navy"><Check size={12} /> Sent</span>
-                  )}
-                  {deliveryStatus === "delivered" && (
-                    <span className="flex items-center gap-1 text-success"><CheckCheck size={12} /> Delivered</span>
-                  )}
-                  {deliveryStatus === "read" && (
-                    <span className="flex items-center gap-1 text-success-dark font-extrabold"><CheckCheck size={12} className="text-success-dark" /> Read ✔</span>
-                  )}
-                </span>
+            {booking.notes && (
+              <div className="bg-card border border-border/80 rounded-2xl p-5 space-y-2 shadow-xs">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-navy flex items-center gap-2 pb-2 border-b border-border/50">
+                  <FileText size={14} className="text-gold" /> Special Notes / Requests
+                </h3>
+                <p className="text-muted-foreground text-xs leading-relaxed">{booking.notes}</p>
               </div>
             )}
 
-            {/* Action buttons */}
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={handleSendWhatsApp}
-                disabled={isSending || !messageContent}
-                className="flex-1 inline-flex justify-center items-center gap-1.5 rounded-lg bg-success py-2 text-xs font-bold text-white hover:bg-success/90 disabled:opacity-50"
-              >
-                <Send size={12} /> {isSending ? "Sending..." : "Send via WhatsApp"}
-              </button>
-            </div>
+          </div>
 
-            {/* Scheduled send option */}
-            <div className="border-t border-border/60 pt-3 mt-2 space-y-2">
-              <label className="text-[10px] font-bold text-muted-foreground uppercase block">Schedule Send Option</label>
-              <div className="flex gap-1.5">
-                <input
-                  type="datetime-local"
-                  value={scheduleTime}
-                  onChange={(e) => setScheduleTime(e.target.value)}
-                  className="flex-1 rounded-md border border-input bg-card px-2 py-1 text-[11px] focus:outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={handleScheduleSend}
-                  className="rounded bg-navy text-white text-[11px] px-3 font-semibold hover:bg-navy/90"
-                >
-                  Schedule
-                </button>
+          {/* Right Area (5 cols): Billing & WhatsApp panel */}
+          <div className="lg:col-span-5 space-y-6">
+            
+            {/* Financial Summary */}
+            <div className="bg-card border border-border/80 rounded-2xl p-5 space-y-4 shadow-xs relative overflow-hidden">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-navy flex items-center gap-2 pb-2 border-b border-border/50">
+                <CreditCard size={14} className="text-gold" /> Payment Breakdown
+              </h3>
+              
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs font-medium text-foreground/80">
+                  <span>Agreed Total</span>
+                  <span>{formatINR(booking.agreed_total)}</span>
+                </div>
+                <div className="flex justify-between text-xs font-medium text-success">
+                  <span>Advance Paid</span>
+                  <span>{formatINR(booking.advance_paid)}</span>
+                </div>
+                <div className="flex justify-between text-xs font-medium text-foreground/80">
+                  <span>Discount Applied</span>
+                  <span>{formatINR(booking.discount)}</span>
+                </div>
+                
+                <div className={`flex items-center justify-between rounded-xl p-3.5 mt-3 ${
+                  balance > 0 ? "bg-danger/5 border border-danger/10 text-danger" : "bg-success/5 border border-success/10 text-success"
+                }`}>
+                  <div className="space-y-0.5">
+                    <span className="text-[10px] uppercase font-bold tracking-wider opacity-85 block">Balance Outstanding</span>
+                    {balance === 0 && <span className="text-[9px] bg-success/20 text-success px-1.5 py-0.5 rounded font-black uppercase">Paid In Full</span>}
+                  </div>
+                  <span className="text-lg font-black tracking-tight">{formatINR(balance)}</span>
+                </div>
               </div>
             </div>
 
-            {/* Delivery Logs History */}
-            <div className="border-t border-border/60 pt-3 mt-2 space-y-2 max-h-[140px] overflow-y-auto">
-              <label className="text-[10px] font-bold text-muted-foreground uppercase block">Communication History Logs</label>
-              {historyLogs.length === 0 ? (
-                <div className="text-center text-muted-foreground text-[10px] py-2">
-                  No message history logs found.
+            {/* WhatsApp Engine Panel */}
+            <div className="bg-card border border-border/80 rounded-2xl p-5 space-y-4 shadow-xs relative overflow-hidden">
+              <div className="absolute -top-3 -right-3 h-16 w-16 bg-success/5 rounded-bl-full flex items-center justify-end pr-5 pb-5">
+                <MessageCircle className="text-success h-6 w-6 opacity-30" />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-navy">
+                  WhatsApp Center
+                </h3>
+                <span className="rounded-full bg-success/10 px-2 py-0.5 text-[8px] font-black text-success uppercase tracking-wider">
+                  Automated Engine
+                </span>
+              </div>
+
+              {/* Template selector */}
+              <div className="space-y-1">
+                <label className="text-[10px] uppercase font-bold text-muted-foreground">Select Template</label>
+                <select
+                  value={selectedTemplateId}
+                  onChange={(e) => setSelectedTemplateId(e.target.value)}
+                  className="w-full rounded-lg border border-input bg-card px-3 py-2 text-xs focus:ring-1 focus:ring-navy focus:outline-none"
+                >
+                  <optgroup label={`Suggested for ${booking.status}`}>
+                    {suggestedTemplates.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Other Preset Templates">
+                    {templates.filter(t => !suggestedTemplates.some(st => st.id === t.id)).map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                </select>
+              </div>
+
+              {/* Dynamic Tone selector */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1">
+                    <Sparkles size={11} className="text-gold" /> AI Tone Presets
+                  </label>
+                  <select
+                    value={aiTone}
+                    onChange={(e) => setAiTone(e.target.value)}
+                    className="w-full rounded-lg border border-input bg-card px-2.5 py-1.5 text-xs focus:outline-none"
+                  >
+                    {AI_TONES.map((tone) => (
+                      <option key={tone.value} value={tone.value}>
+                        {tone.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              ) : (
-                <div className="space-y-1.5">
-                  {historyLogs.map((log) => (
-                    <div key={log.id} className="rounded border border-border/50 bg-muted/10 p-2 text-[10px] flex justify-between items-start">
-                      <div className="space-y-0.5">
-                        <div className="font-bold flex items-center gap-1">
-                          {log.templateName}
-                          {log.scheduledFor && (
-                            <span className="text-[8px] bg-gold/15 text-gold-dark px-1 rounded">Scheduled</span>
-                          )}
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-bold text-muted-foreground">Delivery Priority</label>
+                  <span className={`block py-1.5 px-2.5 text-xs font-black rounded-lg text-center ${
+                    activeTemplate?.priority === "High" ? "bg-danger/10 text-danger" :
+                    activeTemplate?.priority === "Medium" ? "bg-gold/10 text-gold-dark" : "bg-muted text-muted-foreground"
+                  }`}>
+                    {activeTemplate?.priority || "Medium"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Msg Content Textbox */}
+              <div className="space-y-1">
+                <div className="flex justify-between items-center">
+                  <label className="text-[10px] uppercase font-bold text-muted-foreground">Generated Content</label>
+                  <span className="text-[8px] font-bold text-navy bg-navy/10 px-1 rounded">Live AI Optimizations</span>
+                </div>
+                <textarea
+                  value={messageContent}
+                  onChange={(e) => setMessageContent(e.target.value)}
+                  rows={5}
+                  className="w-full rounded-lg border border-input bg-card p-3 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-success leading-relaxed"
+                ></textarea>
+              </div>
+
+              {/* Delivery logs & sending action */}
+              <div className="space-y-3">
+                {deliveryStatus !== "idle" && (
+                  <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2 text-xs">
+                    <span className="text-muted-foreground font-medium">Status:</span>
+                    <span className="font-extrabold flex items-center gap-1">
+                      {deliveryStatus === "sending" && (
+                        <span className="text-gold flex items-center gap-1"><Clock size={11} className="animate-spin" /> Transferring...</span>
+                      )}
+                      {deliveryStatus === "sent" && <span className="text-navy flex items-center gap-1"><Check size={11} /> Sent to WA</span>}
+                      {deliveryStatus === "delivered" && <span className="text-success flex items-center gap-1"><CheckCheck size={11} /> Delivered</span>}
+                      {deliveryStatus === "read" && <span className="text-success font-black flex items-center gap-1">Read ✔</span>}
+                    </span>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleSendWhatsApp}
+                  disabled={isSending || !messageContent}
+                  className="w-full inline-flex justify-center items-center gap-2 rounded-xl bg-success py-2.5 text-xs font-bold text-white hover:bg-success/90 transition-all disabled:opacity-50"
+                >
+                  <Send size={13} /> {isSending ? "Processing..." : "Open WhatsApp Dispatch"}
+                </button>
+              </div>
+
+              {/* Scheduling option */}
+              <div className="border-t border-border/40 pt-3 space-y-2">
+                <label className="text-[10px] uppercase font-bold text-muted-foreground block">Queue Delayed Send</label>
+                <div className="flex gap-2">
+                  <input
+                    type="datetime-local"
+                    value={scheduleTime}
+                    onChange={(e) => setScheduleTime(e.target.value)}
+                    className="flex-1 rounded-lg border border-input bg-card px-2.5 py-1.5 text-xs focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleScheduleSend}
+                    className="rounded-lg bg-navy text-white text-xs font-bold px-4 hover:bg-navy/90"
+                  >
+                    Schedule
+                  </button>
+                </div>
+              </div>
+
+              {/* Logs */}
+              <div className="border-t border-border/40 pt-3 space-y-2.5 max-h-[140px] overflow-y-auto">
+                <label className="text-[10px] uppercase font-bold text-muted-foreground block">Transmission Logs</label>
+                {historyLogs.length === 0 ? (
+                  <div className="text-center text-muted-foreground text-[10px] py-1">
+                    No recent transmission history.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {historyLogs.map((log) => (
+                      <div key={log.id} className="rounded-lg border border-border/50 bg-muted/20 p-2.5 text-[10px] flex justify-between items-start">
+                        <div className="space-y-0.5">
+                          <div className="font-extrabold text-navy flex items-center gap-1">
+                            {log.templateName}
+                            {log.scheduledFor && <span className="text-[8px] bg-gold/20 text-gold-dark px-1 rounded">Delayed</span>}
+                          </div>
+                          <div className="text-[9px] text-muted-foreground">
+                            {new Date(log.sentAt).toLocaleString()}
+                          </div>
                         </div>
-                        <div className="text-[8px] text-muted-foreground">
-                          {new Date(log.sentAt).toLocaleString()}
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-success">{log.scheduledFor ? "Scheduled" : log.status}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleResend(log)}
+                            className="text-navy hover:underline font-extrabold"
+                          >
+                            Resend
+                          </button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-medium text-success-dark">
-                          {log.scheduledFor ? "Scheduled" : log.status}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleResend(log)}
-                          className="text-navy hover:underline font-bold"
-                        >
-                          Resend
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
+              </div>
+
             </div>
-
           </div>
-
         </div>
-
       </div>
     </Modal>
   );
