@@ -49,10 +49,27 @@ function createSupabaseClient() {
 
 let _supabase: ReturnType<typeof createSupabaseClient> | undefined;
 
+/**
+ * Module-level cached flag: true when the Supabase client has an active
+ * authenticated session. Updated once via onAuthStateChange — zero extra
+ * network round-trips per query (fixes the per-query getSession() overhead).
+ */
+let _hasSupabaseSession = false;
+
 function getRawSupabase() {
   if (!_supabase) {
     _supabase = createSupabaseClient();
     registerRawClientGetter(() => _supabase);
+
+    // Listen to auth state changes to keep the cached flag in sync
+    _supabase.auth.onAuthStateChange((_event, session) => {
+      _hasSupabaseSession = !!session;
+    });
+
+    // Populate the initial value without blocking
+    _supabase.auth.getSession().then(({ data }) => {
+      _hasSupabaseSession = !!data?.session;
+    }).catch(() => {});
   }
   return _supabase;
 }
@@ -147,15 +164,12 @@ class HybridQueryBuilder {
 
   private async execute() {
     const raw = getRawSupabase();
-    
-    // Force offline database fallback if logged in as a local vault user, unless they are online and authenticated with Supabase
+
+    // Use the module-level cached session flag — no extra network call per query.
+    // A vault-only session (offline admin) falls back to local DB unless there is
+    // also a live Supabase session (set by the under-the-hood auto-login in auth.tsx).
     const isVaultSession = typeof window !== "undefined" && !!localStorage.getItem("vault_session_id");
-    let hasSupabaseSession = false;
-    try {
-      const { data } = await raw.auth.getSession();
-      hasSupabaseSession = !!data?.session;
-    } catch {}
-    const isOnline = navigator.onLine && (!isVaultSession || hasSupabaseSession);
+    const isOnline = typeof navigator !== "undefined" && navigator.onLine && (!isVaultSession || _hasSupabaseSession);
 
     if (isOnline) {
       try {
