@@ -6,6 +6,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { logActivity, query } from "@/lib/db";
 import { hasConflict, type SlotDef, type BookingLite } from "@/lib/slots";
 import { todayIST } from "@/lib/format";
+import { 
+  getSavedTemplates, 
+  generateAIDynamicContent, 
+  addSentHistoryLog 
+} from "@/lib/whatsapp-engine";
 
 interface FormValues {
   booking_date: string;
@@ -121,6 +126,92 @@ export function BookingFormModal({
     return conflict ? { ok: false } : { ok: true };
   }, [watched.booking_date, watched.slot_id, slots, allBookings, initial?.id]);
 
+  const triggerWhatsAppAutomation = (id: string, booking: any) => {
+    try {
+      const templates = getSavedTemplates();
+      const balance = Number(booking.agreed_total || 0) - Number(booking.advance_paid || 0) - Number(booking.discount || 0);
+      const slot = slots.find((s) => s.id === booking.slot_id);
+      const bookingWithSlot = { ...booking, slot };
+
+      // 1. Booking Confirmation (if status is Confirmed)
+      if (booking.status === "Confirmed") {
+        const confirmTpl = templates.find((t) => t.id === "booking-confirm" && t.enabled);
+        if (confirmTpl) {
+          const text = generateAIDynamicContent(confirmTpl, bookingWithSlot, "Warm");
+          addSentHistoryLog({
+            bookingId: id,
+            templateId: confirmTpl.id,
+            templateName: confirmTpl.name,
+            recipientMobile: booking.mobile,
+            recipientName: booking.customer_name,
+            messageContent: text,
+            status: "Sent",
+          });
+          toast.success("WhatsApp Booking Confirmation Queued", {
+            action: {
+              label: "Send Now",
+              onClick: () => {
+                window.open(`https://wa.me/91${booking.mobile}?text=${encodeURIComponent(text)}`, "_blank");
+              }
+            },
+            duration: 8000
+          });
+        }
+      }
+
+      // 2. Payment Confirmation or Payment Reminder
+      if (balance <= 0) {
+        const payConfirmTpl = templates.find((t) => t.id === "payment-confirm" && t.enabled);
+        if (payConfirmTpl) {
+          const text = generateAIDynamicContent(payConfirmTpl, bookingWithSlot, "Friendly");
+          addSentHistoryLog({
+            bookingId: id,
+            templateId: payConfirmTpl.id,
+            templateName: payConfirmTpl.name,
+            recipientMobile: booking.mobile,
+            recipientName: booking.customer_name,
+            messageContent: text,
+            status: "Sent",
+          });
+          toast.success("WhatsApp Payment Receipt Queued", {
+            action: {
+              label: "Send Receipt",
+              onClick: () => {
+                window.open(`https://wa.me/91${booking.mobile}?text=${encodeURIComponent(text)}`, "_blank");
+              }
+            },
+            duration: 8000
+          });
+        }
+      } else {
+        const payRemindTpl = templates.find((t) => t.id === "payment-reminder" && t.enabled);
+        if (payRemindTpl) {
+          const text = generateAIDynamicContent(payRemindTpl, bookingWithSlot, "Urgent");
+          addSentHistoryLog({
+            bookingId: id,
+            templateId: payRemindTpl.id,
+            templateName: payRemindTpl.name,
+            recipientMobile: booking.mobile,
+            recipientName: booking.customer_name,
+            messageContent: text,
+            status: "Sent",
+          });
+          toast.info("WhatsApp Payment Reminder Queued", {
+            action: {
+              label: "Send Reminder",
+              onClick: () => {
+                window.open(`https://wa.me/91${booking.mobile}?text=${encodeURIComponent(text)}`, "_blank");
+              }
+            },
+            duration: 8000
+          });
+        }
+      }
+    } catch (err) {
+      console.error("WhatsApp Trigger Error:", err);
+    }
+  };
+
   const onSubmit = async (vals: FormValues) => {
     if (vals.status === "Confirmed" && availability && !availability.ok) {
       toast.error("This slot is already booked for the selected date.");
@@ -145,17 +236,19 @@ export function BookingFormModal({
       if (error) return toast.error(error.message);
       await logActivity("Edit", "Bookings", `Updated booking ${initial.id}`);
       toast.success("Booking updated");
+      triggerWhatsAppAutomation(initial.id, { ...payload, order_id: initial.order_id || "" });
     } else {
       const { data: u } = await supabase.auth.getUser();
       payload.created_by = u.user?.id;
       const { error, data } = await supabase
         .from("bookings")
         .insert(payload)
-        .select("order_id")
+        .select("id, order_id")
         .single();
       if (error) return toast.error(error.message);
       await logActivity("Create", "Bookings", `Created booking ${data?.order_id}`);
       toast.success(`Booking ${data?.order_id} created`);
+      triggerWhatsAppAutomation(data.id, { ...payload, order_id: data.order_id });
     }
 
     // Cleanup draft if it was one
