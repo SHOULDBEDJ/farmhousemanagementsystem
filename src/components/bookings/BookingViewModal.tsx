@@ -362,63 +362,6 @@ export function BookingViewModal({
               </div>
             </div>
 
-            {/* Add-On Services Card */}
-            <div className="bg-card border border-border/80 rounded-2xl p-5 space-y-4 shadow-xs">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-navy flex items-center gap-2 pb-1">
-                <Layers size={14} className="text-gold" /> Add-On Services
-              </h3>
-              <p className="text-[11px] text-muted-foreground leading-normal">
-                Toggle options below to update dynamic variables inside the WhatsApp template.
-              </p>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <label className={`flex items-center justify-between rounded-xl border p-3 cursor-pointer transition-all ${
-                  addonBBQ ? "border-navy bg-navy/5 text-navy font-bold" : "border-border bg-card hover:bg-muted/10 text-foreground"
-                }`}>
-                  <span className="text-xs">BBQ Setup</span>
-                  <input
-                    type="checkbox"
-                    checked={addonBBQ}
-                    onChange={(e) => setAddonBBQ(e.target.checked)}
-                    className="rounded text-navy focus:ring-navy scale-95"
-                  />
-                </label>
-                <label className={`flex items-center justify-between rounded-xl border p-3 cursor-pointer transition-all ${
-                  addonBonfire ? "border-navy bg-navy/5 text-navy font-bold" : "border-border bg-card hover:bg-muted/10 text-foreground"
-                }`}>
-                  <span className="text-xs">Bonfire</span>
-                  <input
-                    type="checkbox"
-                    checked={addonBonfire}
-                    onChange={(e) => setAddonBonfire(e.target.checked)}
-                    className="rounded text-navy focus:ring-navy scale-95"
-                  />
-                </label>
-                <label className={`flex items-center justify-between rounded-xl border p-3 cursor-pointer transition-all ${
-                  addonDJ ? "border-navy bg-navy/5 text-navy font-bold" : "border-border bg-card hover:bg-muted/10 text-foreground"
-                }`}>
-                  <span className="text-xs">DJ Sound</span>
-                  <input
-                    type="checkbox"
-                    checked={addonDJ}
-                    onChange={(e) => setAddonDJ(e.target.checked)}
-                    className="rounded text-navy focus:ring-navy scale-95"
-                  />
-                </label>
-              </div>
-
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-border/40">
-                <span className="text-xs text-muted-foreground font-medium">Caretaker contact phone for templates:</span>
-                <input
-                  type="text"
-                  value={customCaretaker}
-                  onChange={(e) => setCustomCaretaker(e.target.value)}
-                  placeholder="Caretaker Mobile"
-                  className="rounded-lg border border-input bg-card px-3 py-1.5 text-xs w-full sm:w-48 focus:ring-1 focus:ring-navy focus:outline-none"
-                />
-              </div>
-            </div>
-
             {/* Booking Journey Timeline */}
             <div className="bg-card border border-border/80 rounded-2xl p-5 space-y-5 shadow-xs">
               <h3 className="text-xs font-bold uppercase tracking-wider text-navy flex items-center gap-2 pb-2 border-b border-border/50">
