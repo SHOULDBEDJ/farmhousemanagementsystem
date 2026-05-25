@@ -86,7 +86,7 @@ export const ldb = {
   delete(table: string, id: string): boolean {
     const rows = getTable(table);
     const filtered = rows.filter((r) => r.id !== id);
-    if (filtered.length === filtered.length && filtered.length === rows.length) return false;
+    if (filtered.length === rows.length) return false;
     setTable(table, filtered);
     return true;
   },
@@ -103,6 +103,41 @@ export const ldb = {
     value: any,
   ): T[] {
     return getTable<T>(table).filter((r) => !r.deleted_at && r[field] === value);
+  },
+
+  // ─── Offline synchronization queue ──────────────────────────────────────────
+  getPendingSyncQueue(): any[] {
+    try {
+      return JSON.parse(localStorage.getItem("ldb_pending_sync_queue") || "[]");
+    } catch {
+      return [];
+    }
+  },
+
+  addToPendingSyncQueue(item: { id?: string; table: string; action: "insert" | "update" | "delete"; targetId?: string; payload?: any }) {
+    const queue = this.getPendingSyncQueue();
+    queue.push({
+      id: item.id ?? uuid(),
+      table: item.table,
+      action: item.action,
+      targetId: item.targetId,
+      payload: item.payload,
+      timestamp: Date.now(),
+    });
+    localStorage.setItem("ldb_pending_sync_queue", JSON.stringify(queue));
+  },
+
+  removeFromPendingSyncQueue(id: string) {
+    const queue = this.getPendingSyncQueue().filter((item: any) => item.id !== id);
+    localStorage.setItem("ldb_pending_sync_queue", JSON.stringify(queue));
+  },
+
+  getTableData(table: string): any[] {
+    return getTable(table);
+  },
+
+  setTableData(table: string, data: any[]): void {
+    setTable(table, data);
   },
 };
 

@@ -58,9 +58,9 @@ function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
-    // Validate size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error("Image too large. Please choose a file under 2 MB.");
+    // Validate size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Image too large. Please choose a file under 10 MB.");
       return;
     }
 

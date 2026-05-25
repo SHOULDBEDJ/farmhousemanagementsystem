@@ -266,8 +266,18 @@ function SettingsPage() {
     }
     setSaving(true);
     try {
-      const { error } = await supabase.from(category).delete().neq("id", "00000000-0000-0000-0000-000000000000");
-      if (error) throw error;
+      const targets = [category];
+      if (category === "incomes") {
+        targets.push("income_types");
+      } else if (category === "expenses") {
+        targets.push("expense_types");
+      }
+      
+      for (const target of targets) {
+        const { error } = await supabase.from(target as any).delete().neq("id", "00000000-0000-0000-0000-000000000000");
+        if (error) throw error;
+      }
+      
       toast.success(`All ${category} deleted successfully`);
       loadSettings();
     } catch (error: any) {

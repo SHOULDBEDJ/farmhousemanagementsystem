@@ -3,6 +3,7 @@ import { Toaster } from "sonner";
 import { AuthProvider } from "@/lib/auth";
 import { SettingsProvider } from "@/lib/settings-context";
 import { LaunchScreen } from "@/components/layout/LaunchScreen";
+import { startSyncService } from "@/lib/sync-service";
 import appCss from "../styles.css?url";
 
 export const Route = createRootRoute({
@@ -98,6 +99,9 @@ import { useEffect } from "react";
 
 function RootShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
+    // Start background online/offline synchronization service
+    startSyncService();
+
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
         navigator.serviceWorker

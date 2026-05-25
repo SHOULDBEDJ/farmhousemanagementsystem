@@ -43,13 +43,10 @@ function BookingsPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string>("all");
   const [view, setView] = useState<"table" | "cards">("table");
-  const [activeSection, setActiveSection] = useState<"all" | "drafts">("all");
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState<BookingFormData | null>(null);
   const [viewing, setViewing] = useState<Row | null>(null);
   const [deleting, setDeleting] = useState<Row | null>(null);
-  const [drafts, setDrafts] = useState<any[]>([]);
-  const [deletingDraft, setDeletingDraft] = useState<any | null>(null);
   const [templates, setTemplates] = useState<any[]>([]);
   const [farm, setFarm] = useState<{
     name: string;
@@ -60,7 +57,7 @@ function BookingsPage() {
 
   const load = async () => {
     setLoading(true);
-    const [bks, temps, drfts] = await Promise.all([
+    const [bks, temps] = await Promise.all([
       query(
         supabase
           .from("bookings")
@@ -76,27 +73,10 @@ function BookingsPage() {
           .order("name", { ascending: true }),
         [],
       ),
-      query(
-        supabase
-          .from("activity_log")
-          .select("*")
-          .eq("module", "BOOKING_DRAFT")
-          .order("created_at", { ascending: false }),
-        [],
-      ),
     ]);
 
     setRows((bks ?? []) as any);
     setTemplates(temps || []);
-    setDrafts(
-      ((drfts ?? []) as any[])
-        .filter((d) => d.detail)
-        .map((d) => ({
-          ...JSON.parse(d.detail!),
-          log_id: d.id,
-          created_at: d.created_at,
-        })),
-    );
     setLoading(false);
   };
   const { new: autoAdd, date: autoDate } = Route.useSearch();
@@ -175,22 +155,6 @@ function BookingsPage() {
   };
 
   const [deletingInProgress, setDeletingInProgress] = useState(false);
-  const doDeleteDraft = async () => {
-    if (!deletingDraft || deletingInProgress) return;
-    setDeletingInProgress(true);
-    try {
-      const { error } = await supabase.from("activity_log").delete().eq("id", deletingDraft.log_id);
-      if (error) throw error;
-      toast.success("Draft deleted");
-      setDeletingDraft(null);
-      load();
-    } catch (error: any) {
-      console.error("Delete draft error:", error);
-      toast.error("Failed to delete draft: " + error.message);
-    } finally {
-      setDeletingInProgress(false);
-    }
-  };
 
   return (
     <div className="space-y-5">
@@ -224,25 +188,6 @@ function BookingsPage() {
       </div>
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="flex rounded-md border border-input bg-card p-1">
-          <button
-            onClick={() => setActiveSection("all")}
-            className={`rounded px-3 py-1.5 text-xs font-medium transition ${activeSection === "all" ? "bg-navy text-white" : "hover:bg-muted"}`}
-          >
-            All Bookings
-          </button>
-          <button
-            onClick={() => setActiveSection("drafts")}
-            className={`relative rounded px-3 py-1.5 text-xs font-medium transition ${activeSection === "drafts" ? "bg-navy text-white" : "hover:bg-muted"}`}
-          >
-            Drafts
-            {drafts.length > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-danger text-[10px] text-white">
-                {drafts.length}
-              </span>
-            )}
-          </button>
-        </div>
         <div className="relative flex-1">
           <Search
             size={14}
@@ -256,18 +201,16 @@ function BookingsPage() {
             style={{ fontSize: 16 }}
           />
         </div>
-        {activeSection === "all" && (
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            className="rounded-md border border-input bg-card px-3 py-2 text-sm"
-          >
-            <option value="all">All Status</option>
-            <option>Confirmed</option>
-            <option>Pending</option>
-            <option>Cancelled</option>
-          </select>
-        )}
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+          className="rounded-md border border-input bg-card px-3 py-2 text-sm"
+        >
+          <option value="all">All Status</option>
+          <option>Confirmed</option>
+          <option>Pending</option>
+          <option>Cancelled</option>
+        </select>
         <div className="flex rounded-md border border-input bg-card">
           <button
             onClick={() => setView("table")}
@@ -285,54 +228,9 @@ function BookingsPage() {
       </div>
 
       <div className="text-xs text-muted-foreground">
-        {activeSection === "drafts" ? drafts.length : filtered.length} results found
+        {filtered.length} results found
       </div>
-      {activeSection === "drafts" ? (
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          {drafts.length === 0 ? (
-            <div className="col-span-full py-10 text-center text-muted-foreground">
-              No drafts saved.
-            </div>
-          ) : (
-            drafts.map((d, i) => (
-              <div key={i} className="rounded-xl border border-border bg-card p-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                    Saved {formatDateIST(d.created_at)}
-                  </span>
-                  <span className="rounded bg-muted px-2 py-0.5 text-[10px] font-medium">
-                    DRAFT
-                  </span>
-                </div>
-                <div className="mt-1 font-semibold">{d.customer_name || "Untitled Draft"}</div>
-                <div className="text-xs text-muted-foreground">
-                  {d.mobile ? `+91 ${d.mobile}` : "No mobile"}
-                </div>
-                <div className="mt-2 text-xs">
-                  Date: <b>{d.booking_date ? formatDateIST(d.booking_date) : "Not set"}</b>
-                </div>
-                <div className="mt-3 flex gap-2">
-                  <button
-                    onClick={() => {
-                      setEditing(d);
-                      setShowAdd(true);
-                    }}
-                    className="flex-1 rounded-md bg-navy px-3 py-1.5 text-xs text-white"
-                  >
-                    Resume
-                  </button>
-                  <button
-                    onClick={() => setDeletingDraft(d)}
-                    className="rounded-md border border-danger px-3 py-1.5 text-xs text-danger"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      ) : filtered.length === 0 ? (
+      {filtered.length === 0 ? (
         <EmptyState
           icon={CalendarDays}
           title="No bookings found"
@@ -613,16 +511,6 @@ function BookingsPage() {
         loading={deletingInProgress}
         onCancel={() => setDeleting(null)}
         onConfirm={doDelete}
-      />
-      <ConfirmDialog
-        open={!!deletingDraft}
-        title={`Delete Draft?`}
-        body="This action cannot be undone."
-        confirmLabel="Delete"
-        danger
-        loading={deletingInProgress}
-        onCancel={() => setDeletingDraft(null)}
-        onConfirm={doDeleteDraft}
       />
     </div>
   );
