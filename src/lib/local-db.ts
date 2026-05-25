@@ -29,21 +29,24 @@ function getTable<T extends { id: string }>(table: string): T[] {
   }
 }
 
-function setTable<T extends { id: string }>(table: string, rows: T[]): void {
+export function safeSetLocalStorage(key: string, value: string): void {
   try {
-    localStorage.setItem(`ldb_${table}`, JSON.stringify(rows));
+    localStorage.setItem(key, value);
   } catch (e: any) {
     if (e.name === "QuotaExceededError" || e.message?.toLowerCase().includes("quota")) {
-      console.warn("LocalStorage quota exceeded! Initiating automated self-healing cleanup...");
+      console.warn(`LocalStorage quota exceeded while setting key: ${key}! Initiating automated self-healing cleanup...`);
       // 1. Remove non-essential logs and backup histories
       localStorage.removeItem("ldb_activity_log");
       localStorage.removeItem("ldb_backup_history");
       
       // 2. Prune sync queue to the most recent 10 items
       try {
-        const queue = JSON.parse(localStorage.getItem("ldb_pending_sync_queue") || "[]");
-        if (queue.length > 10) {
-          localStorage.setItem("ldb_pending_sync_queue", JSON.stringify(queue.slice(-10)));
+        const queueStr = localStorage.getItem("ldb_pending_sync_queue");
+        if (queueStr) {
+          const queue = JSON.parse(queueStr);
+          if (queue.length > 10) {
+            localStorage.setItem("ldb_pending_sync_queue", JSON.stringify(queue.slice(-10)));
+          }
         }
       } catch {}
       
@@ -61,16 +64,20 @@ function setTable<T extends { id: string }>(table: string, rows: T[]): void {
       
       // Retry writing the data
       try {
-        localStorage.setItem(`ldb_${table}`, JSON.stringify(rows));
-        console.info(`Self-healing succeeded: ldb_${table} successfully written.`);
+        localStorage.setItem(key, value);
+        console.info(`Self-healing succeeded: key ${key} successfully written.`);
         return;
       } catch (retryErr) {
-        console.error("Self-healing failed to free up enough quota:", retryErr);
+        console.error(`Self-healing failed to free up enough quota for key: ${key}`, retryErr);
         throw retryErr;
       }
     }
     throw e;
   }
+}
+
+function setTable<T extends { id: string }>(table: string, rows: T[]): void {
+  safeSetLocalStorage(`ldb_${table}`, JSON.stringify(rows));
 }
 
 // ─── Public API ────────────────────────────────────────────────────────────────
@@ -164,12 +171,12 @@ export const ldb = {
       payload: item.payload,
       timestamp: Date.now(),
     });
-    localStorage.setItem("ldb_pending_sync_queue", JSON.stringify(queue));
+    safeSetLocalStorage("ldb_pending_sync_queue", JSON.stringify(queue));
   },
 
   removeFromPendingSyncQueue(id: string) {
     const queue = this.getPendingSyncQueue().filter((item: any) => item.id !== id);
-    localStorage.setItem("ldb_pending_sync_queue", JSON.stringify(queue));
+    safeSetLocalStorage("ldb_pending_sync_queue", JSON.stringify(queue));
   },
 
   getTableData(table: string): any[] {
