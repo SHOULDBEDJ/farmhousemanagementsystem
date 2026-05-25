@@ -192,22 +192,34 @@ export const ldb = {
 
 export function seedDefaultData() {
   if (typeof window !== "undefined") {
+    // If the overall flag is set, assume all seeding done
     if (localStorage.getItem("farm_db_seeded")) {
       return;
     }
   }
 
-  if (ldb.list("income_types").length === 0) {
+  // Income types seeding – only once and only if empty
+  if (!localStorage.getItem("income_types_seeded") && ldb.list("income_types").length === 0) {
     ["Booking", "Event", "Food & Beverage", "Other"].forEach((name) =>
-      ldb.insert<any>("income_types", { name }),
+      ldb.insert<any>("income_types", { name })
     );
+    if (typeof window !== "undefined") {
+      localStorage.setItem("income_types_seeded", "true");
+    }
   }
-  if (ldb.list("expense_types").length === 0) {
+
+  // Expense types seeding – only once and only if empty
+  if (!localStorage.getItem("expense_types_seeded") && ldb.list("expense_types").length === 0) {
     ["Maintenance", "Utilities", "Staff", "Supplies", "Other"].forEach((name) =>
-      ldb.insert<any>("expense_types", { name }),
+      ldb.insert<any>("expense_types", { name })
     );
+    if (typeof window !== "undefined") {
+      localStorage.setItem("expense_types_seeded", "true");
+    }
   }
-  if (ldb.list("time_slots").length === 0) {
+
+  // Time slots seeding – only once and only if empty
+  if (!localStorage.getItem("time_slots_seeded") && ldb.list("time_slots").length === 0) {
     ldb.insert<any>("time_slots", {
       name: "Day",
       start_time: "09:00",
@@ -229,9 +241,14 @@ export function seedDefaultData() {
       color: "#10B981",
       is_overnight: false,
     });
+    if (typeof window !== "undefined") {
+      localStorage.setItem("time_slots_seeded", "true");
+    }
   }
 
+  // Mark overall seeding complete
   if (typeof window !== "undefined") {
     localStorage.setItem("farm_db_seeded", "true");
   }
 }
+
