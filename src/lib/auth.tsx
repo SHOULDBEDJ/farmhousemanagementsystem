@@ -76,6 +76,70 @@ function ensureDefaultAdmin() {
   seedDefaultData();
 }
 
+function cleanAndCompressStoredAvatars() {
+  try {
+    const sessionUserStr = localStorage.getItem("vault_user_data");
+    if (sessionUserStr) {
+      const u = JSON.parse(sessionUserStr);
+      if (u.avatarUrl && u.avatarUrl.length > 200 * 1024) {
+        compressBase64Image(u.avatarUrl, (resized) => {
+          u.avatarUrl = resized;
+          try {
+            localStorage.setItem("vault_user_data", JSON.stringify(u));
+          } catch (e) {
+            u.avatarUrl = null;
+            localStorage.setItem("vault_user_data", JSON.stringify(u));
+          }
+        });
+      }
+    }
+
+    const vaultStr = localStorage.getItem("local_vault_users");
+    if (vaultStr) {
+      const vault = JSON.parse(vaultStr);
+      for (const k of Object.keys(vault)) {
+        const u = vault[k];
+        if (u.avatarUrl && u.avatarUrl.length > 200 * 1024) {
+          compressBase64Image(u.avatarUrl, (resized) => {
+            u.avatarUrl = resized;
+            try {
+              localStorage.setItem("local_vault_users", JSON.stringify(vault));
+            } catch (e) {
+              u.avatarUrl = null;
+              localStorage.setItem("local_vault_users", JSON.stringify(vault));
+            }
+          });
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Failed to cleanup bloated avatars:", err);
+  }
+}
+
+function compressBase64Image(base64: string, callback: (resized: string) => void) {
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      const size = Math.min(img.width, img.height);
+      const sX = (img.width - size) / 2;
+      const sY = (img.height - size) / 2;
+      ctx.drawImage(img, sX, sY, size, size, 0, 0, 128, 128);
+      callback(canvas.toDataURL("image/jpeg", 0.6));
+    } else {
+      callback(base64.substring(0, 1000));
+    }
+  };
+  img.onerror = () => {
+    callback(base64.substring(0, 1000));
+  };
+  img.src = base64;
+}
+
 // ─── Supabase profile loader (only for real Supabase Auth users) ─────────────
 async function loadSupabaseProfile(userId: string): Promise<AuthUser | null> {
   try {
@@ -94,8 +158,8 @@ async function loadSupabaseProfile(userId: string): Promise<AuthUser | null> {
     const role: AppRole = list.includes("SuperAdmin")
       ? "SuperAdmin"
       : list.includes("Admin")
-        ? "Admin"
-        : "Staff";
+      ? "Admin"
+      : "Staff";
     const permissions = roles?.find((r) => r.role === role)?.permissions;
     return {
       id: profile.id,
@@ -149,6 +213,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Seed default admin locally on every app start
     ensureDefaultAdmin();
+
+    // Clean up and downscale existing bloated avatars in localStorage
+    cleanAndCompressStoredAvatars();
 
     // Only listen to Supabase auth changes for real Supabase users
     const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {

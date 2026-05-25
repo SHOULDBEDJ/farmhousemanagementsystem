@@ -67,27 +67,63 @@ function ProfilePage() {
     setUploading(true);
     const reader = new FileReader();
     reader.onload = () => {
-      const base64 = reader.result as string;
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const targetWidth = 256;
+        const targetHeight = 256;
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+        const ctx = canvas.getContext("2d");
+        
+        if (ctx) {
+          const size = Math.min(img.width, img.height);
+          const sourceX = (img.width - size) / 2;
+          const sourceY = (img.height - size) / 2;
+          
+          ctx.drawImage(
+            img,
+            sourceX,
+            sourceY,
+            size,
+            size,
+            0,
+            0,
+            targetWidth,
+            targetHeight
+          );
+          
+          const compressedBase64 = canvas.toDataURL("image/jpeg", 0.7);
 
-      // Save into the vault user data (read by auth refresh)
-      const cached = localStorage.getItem(VAULT_USER_KEY);
-      if (cached) {
-        const u = JSON.parse(cached);
-        u.avatarUrl = base64;
-        localStorage.setItem(VAULT_USER_KEY, JSON.stringify(u));
-      }
+          // Save into the vault user data (read by auth refresh)
+          const cached = localStorage.getItem(VAULT_USER_KEY);
+          if (cached) {
+            const u = JSON.parse(cached);
+            u.avatarUrl = compressedBase64;
+            localStorage.setItem(VAULT_USER_KEY, JSON.stringify(u));
+          }
 
-      // Also update the vault users store
-      const vault = getVaultUsers();
-      const key = Object.keys(vault).find((k) => vault[k].id === user.id);
-      if (key) {
-        vault[key].avatarUrl = base64;
-        saveVaultUsers(vault);
-      }
+          // Also update the vault users store
+          const vault = getVaultUsers();
+          const key = Object.keys(vault).find((k) => vault[k].id === user.id);
+          if (key) {
+            vault[key].avatarUrl = compressedBase64;
+            saveVaultUsers(vault);
+          }
 
-      setUploading(false);
-      refresh(); // Triggers re-render in sidebar + topbar
-      toast.success("Profile picture updated!");
+          setUploading(false);
+          refresh(); // Triggers re-render in sidebar + topbar
+          toast.success("Profile picture updated!");
+        } else {
+          setUploading(false);
+          toast.error("Failed to process image.");
+        }
+      };
+      img.onerror = () => {
+        setUploading(false);
+        toast.error("Failed to load image for scaling.");
+      };
+      img.src = reader.result as string;
     };
     reader.onerror = () => {
       setUploading(false);
