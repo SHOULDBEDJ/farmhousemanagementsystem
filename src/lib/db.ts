@@ -2,10 +2,10 @@
  * db.ts — Timeout-safe Supabase query wrapper + shared helpers.
  *
  * Use query() for reads and mutate() for writes so pages fail fast
- * (≤3 s) when Supabase is unreachable, instead of spinning for 60 s.
+ * (≤10 s) when Supabase is unreachable, instead of spinning for 60 s.
  */
 
-const TIMEOUT_MS = 3_000;
+const TIMEOUT_MS = 10_000;
 
 type SupabaseQuery<T> = PromiseLike<{ data: T | null; error: any }>;
 
