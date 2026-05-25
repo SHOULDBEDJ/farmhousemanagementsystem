@@ -30,7 +30,47 @@ function getTable<T extends { id: string }>(table: string): T[] {
 }
 
 function setTable<T extends { id: string }>(table: string, rows: T[]): void {
-  localStorage.setItem(`ldb_${table}`, JSON.stringify(rows));
+  try {
+    localStorage.setItem(`ldb_${table}`, JSON.stringify(rows));
+  } catch (e: any) {
+    if (e.name === "QuotaExceededError" || e.message?.toLowerCase().includes("quota")) {
+      console.warn("LocalStorage quota exceeded! Initiating automated self-healing cleanup...");
+      // 1. Remove non-essential logs and backup histories
+      localStorage.removeItem("ldb_activity_log");
+      localStorage.removeItem("ldb_backup_history");
+      
+      // 2. Prune sync queue to the most recent 10 items
+      try {
+        const queue = JSON.parse(localStorage.getItem("ldb_pending_sync_queue") || "[]");
+        if (queue.length > 10) {
+          localStorage.setItem("ldb_pending_sync_queue", JSON.stringify(queue.slice(-10)));
+        }
+      } catch {}
+      
+      // 3. Clear any uncompressed profile picture strings from other storage keys
+      try {
+        const user = localStorage.getItem("vault_user_data");
+        if (user) {
+          const u = JSON.parse(user);
+          if (u.avatarUrl && u.avatarUrl.length > 200 * 1024) {
+            u.avatarUrl = null;
+            localStorage.setItem("vault_user_data", JSON.stringify(u));
+          }
+        }
+      } catch {}
+      
+      // Retry writing the data
+      try {
+        localStorage.setItem(`ldb_${table}`, JSON.stringify(rows));
+        console.info(`Self-healing succeeded: ldb_${table} successfully written.`);
+        return;
+      } catch (retryErr) {
+        console.error("Self-healing failed to free up enough quota:", retryErr);
+        throw retryErr;
+      }
+    }
+    throw e;
+  }
 }
 
 // ─── Public API ────────────────────────────────────────────────────────────────

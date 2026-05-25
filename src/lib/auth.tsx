@@ -82,10 +82,18 @@ function cleanAndCompressStoredAvatars() {
     if (sessionUserStr) {
       const u = JSON.parse(sessionUserStr);
       if (u.avatarUrl && u.avatarUrl.length > 200 * 1024) {
-        compressBase64Image(u.avatarUrl, (resized) => {
+        console.warn("Synchronously clearing bloated session avatar to recover quota...");
+        const originalUrl = u.avatarUrl;
+        u.avatarUrl = null;
+        try {
+          localStorage.setItem("vault_user_data", JSON.stringify(u));
+        } catch {}
+
+        compressBase64Image(originalUrl, (resized) => {
           u.avatarUrl = resized;
           try {
             localStorage.setItem("vault_user_data", JSON.stringify(u));
+            console.info("Session avatar compressed and recovered.");
           } catch (e) {
             u.avatarUrl = null;
             localStorage.setItem("vault_user_data", JSON.stringify(u));
@@ -97,15 +105,32 @@ function cleanAndCompressStoredAvatars() {
     const vaultStr = localStorage.getItem("local_vault_users");
     if (vaultStr) {
       const vault = JSON.parse(vaultStr);
+      let changed = false;
+      const originalAvatars: Record<string, string> = {};
+
       for (const k of Object.keys(vault)) {
         const u = vault[k];
         if (u.avatarUrl && u.avatarUrl.length > 200 * 1024) {
-          compressBase64Image(u.avatarUrl, (resized) => {
-            u.avatarUrl = resized;
+          console.warn(`Synchronously clearing bloated avatar for user: ${k}...`);
+          originalAvatars[k] = u.avatarUrl;
+          u.avatarUrl = null;
+          changed = true;
+        }
+      }
+
+      if (changed) {
+        try {
+          localStorage.setItem("local_vault_users", JSON.stringify(vault));
+        } catch {}
+
+        for (const k of Object.keys(originalAvatars)) {
+          compressBase64Image(originalAvatars[k], (resized) => {
+            vault[k].avatarUrl = resized;
             try {
               localStorage.setItem("local_vault_users", JSON.stringify(vault));
+              console.info(`Avatar for user ${k} compressed and recovered.`);
             } catch (e) {
-              u.avatarUrl = null;
+              vault[k].avatarUrl = null;
               localStorage.setItem("local_vault_users", JSON.stringify(vault));
             }
           });
