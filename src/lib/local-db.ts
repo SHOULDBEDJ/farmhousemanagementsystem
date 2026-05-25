@@ -191,6 +191,12 @@ export const ldb = {
 // ─── Seed default types if tables are empty ───────────────────────────────────
 
 export function seedDefaultData() {
+  if (typeof window !== "undefined") {
+    if (localStorage.getItem("farm_db_seeded")) {
+      return;
+    }
+  }
+
   if (ldb.list("income_types").length === 0) {
     ["Booking", "Event", "Food & Beverage", "Other"].forEach((name) =>
       ldb.insert<any>("income_types", { name }),
@@ -223,5 +229,9 @@ export function seedDefaultData() {
       color: "#10B981",
       is_overnight: false,
     });
+  }
+
+  if (typeof window !== "undefined") {
+    localStorage.setItem("farm_db_seeded", "true");
   }
 }

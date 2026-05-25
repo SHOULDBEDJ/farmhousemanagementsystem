@@ -208,6 +208,10 @@ class HybridQueryBuilder {
           // Success! Sync online change to offline ldb
           this.syncOnlineToLocal(data);
           
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("database-change"));
+          }
+          
           // If the caller did NOT explicitly request returned data on insert/update,
           // return data: null to match standard Supabase behavior
           const returnedData = this.hasSelect ? data : null;
@@ -283,6 +287,13 @@ class HybridQueryBuilder {
 
   private async executeOffline() {
     console.info(`[Offline DB] Running ${this.method} on table: ${this.table}`);
+    
+    // Dispatch local change event for mutating methods (insert, update, delete)
+    if (this.method !== "select" && typeof window !== "undefined") {
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("database-change"));
+      }, 0);
+    }
     
     if (this.method === "select") {
       let rows = ldb.all(this.table);

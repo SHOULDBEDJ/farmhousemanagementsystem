@@ -148,6 +148,9 @@ export function startSyncService() {
       const syncOk = await syncPendingMutations();
       if (syncOk) {
         await pullOnlineSnapshots();
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("database-change"));
+        }
       }
     }
     syncTimeout = setTimeout(runSyncCycle, 60_000); // Check/Sync every minute
@@ -157,13 +160,38 @@ export function startSyncService() {
   window.addEventListener("online", () => {
     toast.info("Connection restored. Syncing database...");
     syncPendingMutations().then((ok) => {
-      if (ok) pullOnlineSnapshots();
+      if (ok) {
+        pullOnlineSnapshots().then(() => {
+          window.dispatchEvent(new CustomEvent("database-change"));
+        });
+      }
     });
   });
   
   window.addEventListener("offline", () => {
     toast.warning("You are offline. Changes will be saved locally.");
   });
+
+  // Listen for real-time updates from Supabase Postgres changes publication
+  const raw = getRawSupabaseClient();
+  if (raw) {
+    raw.channel("db-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public" },
+        async (payload: any) => {
+          const tables = ["time_slots", "income_types", "expense_types", "bookings", "incomes", "expenses", "settings"];
+          if (tables.includes(payload.table)) {
+            console.info(`[Realtime Sync] Change detected on ${payload.table}:`, payload);
+            await pullOnlineSnapshots();
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new CustomEvent("database-change"));
+            }
+          }
+        }
+      )
+      .subscribe();
+  }
   
   // Start first run
   runSyncCycle();

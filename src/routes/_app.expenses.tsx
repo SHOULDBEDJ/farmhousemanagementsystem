@@ -96,6 +96,10 @@ function ExpensesPage() {
   const { new: autoAdd } = Route.useSearch();
   useEffect(() => {
     load();
+    if (typeof window !== "undefined") {
+      window.addEventListener("database-change", load);
+      return () => window.removeEventListener("database-change", load);
+    }
   }, []);
   useEffect(() => {
     if (autoAdd && types.length > 0) open();

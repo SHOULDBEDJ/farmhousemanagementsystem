@@ -378,6 +378,9 @@ function SettingsPage() {
       for (const t of tables) {
         await supabase.from(t as any).delete().neq("id", "00000000-0000-0000-0000-000000000000");
       }
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("farm_db_seeded");
+      }
       toast.success("System has been reset to factory defaults");
       loadSettings();
     } catch (error: any) {

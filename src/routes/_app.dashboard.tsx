@@ -73,7 +73,15 @@ function Dashboard() {
   useEffect(() => {
     load();
     const t = setInterval(load, 60_000);
-    return () => clearInterval(t);
+    if (typeof window !== "undefined") {
+      window.addEventListener("database-change", load);
+    }
+    return () => {
+      clearInterval(t);
+      if (typeof window !== "undefined") {
+        window.removeEventListener("database-change", load);
+      }
+    };
   }, []);
 
   const today = todayIST();
