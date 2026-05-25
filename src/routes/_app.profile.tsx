@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { logActivity } from "@/lib/db";
 import { initials, avatarColor, passwordStrength, formatMonthYear } from "@/lib/format";
+import { ldb } from "@/lib/local-db";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -111,6 +112,28 @@ function ProfilePage() {
             saveVaultUsers(vault);
           }
 
+          // ALSO save/sync to settings table in Supabase so it propagates to other devices!
+          if (user.isVaultUser) {
+            const settingsList = ldb.all("settings");
+            const settings = settingsList.length > 0 ? (settingsList[0] as any) : { id: 1 };
+            
+            // Save locally
+            ldb.update("settings", String(settings.id), { watermark_url: compressedBase64 });
+            
+            // Queue sync mutation (updates settings in Supabase!)
+            ldb.addToPendingSyncQueue({
+              table: "settings",
+              action: "update",
+              targetId: String(settings.id),
+              payload: { watermark_url: compressedBase64 },
+            });
+            
+            // Trigger background sync service
+            import("@/lib/sync-service").then(({ syncPendingMutations }) => {
+              syncPendingMutations();
+            });
+          }
+
           setUploading(false);
           refresh(); // Triggers re-render in sidebar + topbar
           toast.success("Profile picture updated!");
@@ -153,6 +176,26 @@ function ProfilePage() {
             localStorage.setItem(VAULT_USER_KEY, JSON.stringify(u));
           }
         }
+
+        // ALSO save/sync display name to settings table in Supabase so it propagates to other devices!
+        const settingsList = ldb.all("settings");
+        const settings = settingsList.length > 0 ? (settingsList[0] as any) : { id: 1 };
+        
+        // Save locally
+        ldb.update("settings", String(settings.id), { owner_name: fullName });
+        
+        // Queue sync mutation
+        ldb.addToPendingSyncQueue({
+          table: "settings",
+          action: "update",
+          targetId: String(settings.id),
+          payload: { owner_name: fullName },
+        });
+
+        // Trigger background sync service
+        import("@/lib/sync-service").then(({ syncPendingMutations }) => {
+          syncPendingMutations();
+        });
       } else {
         const { error } = await supabase
           .from("profiles")

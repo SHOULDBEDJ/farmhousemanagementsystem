@@ -4,7 +4,7 @@ import { useEffect, useState, createContext, useContext, useCallback, type React
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
 import { toast } from "sonner";
-import { seedDefaultData } from "@/lib/local-db";
+import { seedDefaultData, ldb } from "@/lib/local-db";
 
 export type AppRole = "SuperAdmin" | "Admin" | "Staff";
 
@@ -212,6 +212,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (vaultSid) {
       const cached = getLocalSession();
       if (cached) {
+        // Sync display name and avatarUrl from the database settings table if available
+        const settingsList = ldb.all("settings");
+        const settings = settingsList.length > 0 ? (settingsList[0] as any) : null;
+        if (settings) {
+          if (settings.owner_name) cached.fullName = settings.owner_name;
+          if (settings.watermark_url) cached.avatarUrl = settings.watermark_url;
+        }
         setUser(cached);
         setLoading(false);
         return;
@@ -276,10 +283,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         permissions: match.permissions,
         isVaultUser: true,
       };
+      
+      // Override details from local settings if available
+      const settingsList = ldb.all("settings");
+      const settings = settingsList.length > 0 ? (settingsList[0] as any) : null;
+      if (settings) {
+        if (settings.owner_name) authUser.fullName = settings.owner_name;
+        if (settings.watermark_url) authUser.avatarUrl = settings.watermark_url;
+      }
+
       localStorage.setItem(VAULT_SESSION_KEY, match.id);
       localStorage.setItem(VAULT_USER_KEY, JSON.stringify(authUser));
       setUser(authUser);
-      toast.success("Welcome back, " + match.fullName);
+      toast.success("Welcome back, " + authUser.fullName);
       return;
     }
 
