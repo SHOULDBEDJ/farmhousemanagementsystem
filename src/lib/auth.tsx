@@ -219,6 +219,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (settings.owner_name) cached.fullName = settings.owner_name;
           if (settings.watermark_url) cached.avatarUrl = settings.watermark_url;
         }
+
+        // Under-the-hood verification of Supabase session for background sync
+        const email = `${cached.username}@local.com`;
+        const vault = getLocalVault();
+        const match = Object.values(vault).find((u: any) => u.id === cached.id) as any;
+        const password = match?.password || cached.username;
+
+        supabase.auth.getSession().then(({ data }) => {
+          if (!data?.session && navigator.onLine) {
+            supabase.auth.signInWithPassword({ email, password }).catch(() => {
+              // Auto-signup if not registered in Supabase auth yet
+              supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                  data: {
+                    username: cached.username,
+                    full_name: cached.fullName,
+                    role: cached.role,
+                  }
+                }
+              }).then(({ error }) => {
+                if (!error) supabase.auth.signInWithPassword({ email, password }).catch(() => {});
+              });
+            });
+          }
+        });
+
         setUser(cached);
         setLoading(false);
         return;
@@ -273,6 +301,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     ) as any;
 
     if (match) {
+      // Authenticate vault user under the hood with Supabase so that data syncing works online
+      try {
+        const email = `${match.username}@local.com`;
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error && error.message.toLowerCase().includes("invalid login credentials")) {
+          // User doesn't exist online yet, sign them up
+          const { error: signUpError } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: {
+                username: match.username,
+                full_name: match.fullName,
+                role: match.role,
+              },
+            },
+          });
+          if (!signUpError) {
+            await supabase.auth.signInWithPassword({ email, password });
+          }
+        }
+      } catch (err) {
+        console.warn("Background auth with Supabase failed for vault user:", err);
+      }
+
       const authUser: AuthUser = {
         id: match.id,
         username: match.username,

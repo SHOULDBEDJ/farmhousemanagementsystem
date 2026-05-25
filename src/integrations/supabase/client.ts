@@ -148,9 +148,14 @@ class HybridQueryBuilder {
   private async execute() {
     const raw = getRawSupabase();
     
-    // Force offline database fallback if logged in as a local vault user
+    // Force offline database fallback if logged in as a local vault user, unless they are online and authenticated with Supabase
     const isVaultSession = typeof window !== "undefined" && !!localStorage.getItem("vault_session_id");
-    const isOnline = navigator.onLine && !isVaultSession;
+    let hasSupabaseSession = false;
+    try {
+      const { data } = await raw.auth.getSession();
+      hasSupabaseSession = !!data?.session;
+    } catch {}
+    const isOnline = navigator.onLine && (!isVaultSession || hasSupabaseSession);
 
     if (isOnline) {
       try {
